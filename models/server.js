@@ -5,7 +5,16 @@ class Server {
   constructor() {
     this.app = express();
     this.port = process.env.PORT;
-    this.usuariosPath = "/api/usuarios";
+
+    this.paths = {
+      usuarios: "/api/usuarios",
+      materias: "/api/materias",
+      eventos: "/api/eventos",
+      tareas: "/api/tareas",
+      notas: "/api/notas",
+      flashcards: "/api/flashcard",
+      autenticacion: "/api/autenticacion",
+    };
 
     //Middlewares  (Funciones que se ejecutan siempre al abrir el servidor, antes de llegar a las rutas)
     this.middlewares();
@@ -33,15 +42,21 @@ class Server {
   //Endpoints
   routes() {
     // Solicitud a la ruta /api/usuarios de mi archivo
-    this.app.use(this.usuariosPath, require("../routes/usuarios"));
+    this.app.use(this.paths.eventos, require("../routes/eventos"));
+    this.app.use(this.paths.flashcards, require("../routes/flashcards"));
+    this.app.use(this.paths.materias, require("../routes/materias"));
+    this.app.use(this.paths.notas, require("../routes/notas"));
+    this.app.use(this.paths.tareas, require("../routes/tareas"));
+    this.app.use(this.paths.usuarios, require("../routes/usuarios"));
+    this.app.use(this.paths.autenticacion, require("../routes/autenticacion"));
   }
-    // Middleware para rutas no encontradas (cubre cualquier método)
+  // Middleware para rutas no encontradas (cubre cualquier método)
   notFound() {
     this.app.use((req, res) => {
       res.status(404).json({
         error: "Ruta no encontrada",
         method: req.method,
-        path: req.originalUrl
+        path: req.originalUrl,
       });
     });
   }
