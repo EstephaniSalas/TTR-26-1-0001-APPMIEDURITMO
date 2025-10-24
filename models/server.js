@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const { dbConection } = require("../database/config");
 
 class Server {
   constructor() {
@@ -15,6 +16,9 @@ class Server {
       flashcards: "/api/flashcard",
       autenticacion: "/api/autenticacion",
     };
+    
+    //Conectar a base de datos
+    this.conectarDB();
 
     //Middlewares  (Funciones que se ejecutan siempre al abrir el servidor, antes de llegar a las rutas)
     this.middlewares();
@@ -24,6 +28,10 @@ class Server {
 
     //Manejo de rutas no encontradas
     this.notFound();
+  }
+  
+  async conectarDB() {
+    await dbConection();
   }
 
   middlewares() {
