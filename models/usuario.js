@@ -14,10 +14,6 @@ const UsuarioSchema = new Schema({
         type: String,
         required: [true, 'La contraseña es obligatoria']
     },
-    password2: {
-        type: String,
-        required: [true, 'La confirmación de contraseña es obligatoria']
-    },
     tareas: {
         type: [
             {
@@ -57,18 +53,25 @@ const UsuarioSchema = new Schema({
                 ref: 'Evento'
             }
         ],
+    },
+    codigoVerificacion: {
+        type: String,
+        default: null
+    },
+    expiracionCodigo: {
+        type: Date,
+        default: null
+    },
+    intentosCodigo: {
+        type: Number,
+        default: 0
     }
 });
 
 UsuarioSchema.methods.toJSON = function(){
-  const {__v,_id, ...usuario } = this.toObject();
+  const {__v,password,_id,codigoVerificacion,expiracionCodigo,intentosCodigo, ...usuario } = this.toObject();
   usuario.uid=_id;    
   return usuario; 
-}
-
-UsuarioSchema.methods.toJSON = function() {
-    const {password, password2,__v, ...usaurio} = this.toObject();
-    return usaurio;
 }
 
 module.exports = model('Usuario', UsuarioSchema);
