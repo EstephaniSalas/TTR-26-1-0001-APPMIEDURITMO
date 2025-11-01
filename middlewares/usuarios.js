@@ -1,4 +1,4 @@
-const validarContraseñasIguales = (req, res, next) => {
+const validarPassIguales = (req, res, next) => {
   const { password, password2 } = req.body;
     if (password !== password2) {
         return res.status(400).json({
@@ -8,7 +8,6 @@ const validarContraseñasIguales = (req, res, next) => {
     next();
 };
 
-
 module.exports = {
-    validarContraseñasIguales
+    validarPassIguales
 };

@@ -13,7 +13,7 @@ const {
   solicitarCambioPassword,
   confirmarCambioPassword,
 } = require("../controllers/usuarios");
-const { validarContraseñasIguales } = require("../middlewares/validarPass");
+const { validarPassIguales } = require("../middlewares/usuarios");
 
 const router = Router();
 
@@ -25,12 +25,14 @@ router.post("/", [
   check('correo', 'El correo no es valido').notEmpty().isEmail().custom(existeCorreo),
   check('password', 'El password es obligatorio y debe de ser de al menos 8 caracteres').isLength({ min: 8 }),
   check('password2', 'El password2 es obligatorio y debe de ser de al menos 8 caracteres').isLength({ min: 8 }),
-  validarContraseñasIguales,
-  validarCampos
+  validarCampos,
+  validarPassIguales,
 ], crearUsuario);
+
 //obtener el usuario actual
 router.get("/me", [
 ], obtenerUsuario); 
+
 //actualizar usuario actual
 router.put("/:id", [
   check('id').notEmpty().withMessage('El id es obligatorio'),
@@ -52,7 +54,7 @@ router.post("/confirmar-cambio-password", [
   check('codigo', 'El codigo es obligatorio').not().isEmpty(),
   check('password', 'El nuevo password es obligatorio y debe de ser de al menos 8 caracteres').notEmpty().isLength({ min: 8 }),
   check('password2', 'El nuevo password2 es obligatorio y debe de ser de al menos 8 caracteres').notEmpty().isLength({ min: 8 }),
-  validarContraseñasIguales,
+  validarPassIguales,
   validarCampos
 ], confirmarCambioPassword);
 
