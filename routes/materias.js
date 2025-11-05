@@ -8,13 +8,13 @@ const {
   obtenerMaterias,
   modificarMateria,
   borrarMateria,
+  borrarMaterias,
 } = require("../controllers/materias");
-const { validarMateriaPorUsuario, validarMateriaUsuario } = require("../middlewares/materias");
+const { validarMateriaPorUsuario, validarMateriaUsuario, validarEliminarMateria, validarMateriasUsuario } = require("../middlewares/materias");
 
 const router = Router();
 
 //Crear materia para un usuario por id
-//validar que no existan duplicados para el mismo usuario
 //falta validar horarios cruzados
 router.post("/:id", [
   check('id').notEmpty().withMessage("El id es obligatorio").isMongoId().withMessage("No es un ID válido de MongoDB"),
@@ -65,11 +65,32 @@ router.put("/idUsuario/:idU/idMateria/:idM", [
   validarMateriaUsuario
 ], modificarMateria);
 
-//Borrar materia por id
-router.delete("/:id", [
-  check('id', 'No es un ID válido de MongoDB').isMongoId(),
-  check('id').custom(existeMateriaPorId),
-  validarCampos
+router.delete("/idUsuario/:idU/idMateria/:idM", [
+  check('idU').notEmpty().withMessage('El id de usuario es obligatorio'),
+  check('idU', 'No es un ID válido de MongoDB').isMongoId(),
+  check('idU').custom(existeUsuarioPorId),
+  check('idM').notEmpty().withMessage('El id de la materia es obligatorio'),
+  check('idM', 'No es un ID válido de MongoDB').isMongoId(),
+  check('idM').custom(existeMateriaPorId),
+  check('confirmacion')
+    .notEmpty().withMessage('La confirmación es obligatoria')
+    .isBoolean().withMessage('El dato debe ser un booleano'),
+  validarCampos,
+  validarEliminarMateria,
+  validarMateriaUsuario,
 ], borrarMateria);
+
+// Borrar TODAS las materias de un usuario
+router.delete("/idUsuario/:idU", [
+  check('idU').notEmpty().withMessage('El id de usuario es obligatorio'),
+  check('idU', 'No es un ID válido de MongoDB').isMongoId(),
+  check('idU').custom(existeUsuarioPorId),
+  check('confirmacion')
+    .notEmpty().withMessage('La confirmación es obligatoria')
+    .isBoolean().withMessage('El dato debe ser un booleano'),
+  validarCampos,
+  validarMateriasUsuario,
+  validarEliminarMateria,
+], borrarMaterias);
 
 module.exports = router;

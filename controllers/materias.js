@@ -133,24 +133,59 @@ const modificarMateria = async (req = request, res = response) => {
 
 const borrarMateria = async (req = request, res = response) => {
   try {
-    const { id } = req.params;
+    const { idM } = req.params;
+    const materia = req.materia;
+    const infoMateria = {
+      id: materia._id,
+      nombre: materia.nombreMateria,
+      profesor: materia.profesorMateria,
+      dias: materia.diasMateria,
+      horario: `${materia.horaInicioMateria} - ${materia.horaFinMateria}`
+    };
 
-    const materiaBorrada = await Materia.findByIdAndDelete(id);
-
-    if (!materiaBorrada) {
-      return res
-        .status(404)
-        .json({ msg: `No se encontró materia con id ${id}` });
-    }
+    await Materia.findByIdAndDelete(idM);
 
     res.json({
-      msg: "Materia borrada",
-      materia: materiaBorrada,
+      msg: "Materia eliminada exitosamente",
+      materiaEliminada: infoMateria 
     });
   } catch (error) {
     console.log(error);
     res.status(500).json({
       msg: "Error interno al borrar materia",
+      error: error.message,
+    });
+  }
+};
+
+const borrarMaterias = async (req = request, res = response) => {
+  try {
+    const { idU } = req.params;
+    const countMaterias = req.cantMat; 
+
+    const materiasAEliminar = await Materia.find({ usuario: idU })
+      .populate('usuario', 'nombre -_id');
+
+    const resultado = await Materia.deleteMany({ usuario: idU });
+
+    res.status(200).json({
+      msg: "Todas las materias han sido eliminadas",
+      resumen: {
+        usuario: idU,
+        totalMaterias: countMaterias,
+        eliminadas: resultado.deletedCount,
+        materias: materiasAEliminar.map(m => ({
+          nombre: m.nombreMateria,
+          profesor: m.profesorMateria,
+          horario: `${m.diasMateria.join(', ')} de ${m.horaInicioMateria} a ${m.horaFinMateria}`,
+          usuario: m.usuario.nombre
+        }))
+      }
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      msg: "Error interno al eliminar las materias",
       error: error.message,
     });
   }
@@ -162,4 +197,5 @@ module.exports = {
   obtenerMaterias,
   modificarMateria,
   borrarMateria,
+  borrarMaterias
 };

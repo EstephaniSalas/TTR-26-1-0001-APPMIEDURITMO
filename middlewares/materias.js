@@ -45,8 +45,48 @@ const validarMateriaUsuario = async (req = request, res = response, next) => {
         })
   }
 };
+const validarEliminarMateria = (req = request, res = response, next) => {
+  try {
+    const { confirmacion } = req.body;
+    if (confirmacion !== true) {
+      return res.status(400).json({
+        msg: "Se debe confirmar para eliminar la materia",
+      });
+    }
+    next();
+  } catch (error) {
+    console.error("Error en validarEliminarMateria:", error);
+    return res.status(500).json({
+      msg: "Error interno del servidor al validar confirmación",
+    });
+  }
+};
+
+const validarMateriasUsuario = async (req = request, res = response, next) => {
+  const { idU } = req.params;
+  try {
+    const cantidadMaterias = await Materia.countDocuments({ usuario: idU });
+    
+    if (cantidadMaterias <= 0) {
+      return res.status(404).json({
+        msg: "No se tienen materias para eliminar"
+      });
+    }
+    
+    req.cantMat = cantidadMaterias;
+    next();
+
+  } catch (error) {
+    console.log("Error en validarMateriasUsuario:", error);
+    return res.status(500).json({
+      msg: "Error interno del servidor al verificar materias"
+    });
+  }
+};
 
 module.exports = {
   validarMateriaPorUsuario,
   validarMateriaUsuario,
+  validarEliminarMateria,
+  validarMateriasUsuario,
 };
