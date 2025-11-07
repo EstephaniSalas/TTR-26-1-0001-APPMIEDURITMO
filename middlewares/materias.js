@@ -45,6 +45,7 @@ const validarMateriaUsuario = async (req = request, res = response, next) => {
         })
   }
 };
+
 const validarEliminarMateria = (req = request, res = response, next) => {
   try {
     const { confirmacion } = req.body;

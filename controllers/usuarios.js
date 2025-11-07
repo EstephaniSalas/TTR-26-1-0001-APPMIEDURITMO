@@ -8,6 +8,7 @@ const {
 } = require("../helpers/correo");
 const usuario = require("../models/usuario");
 
+
 //:::::: CREAR USUARIO - POST :::::::
 const crearUsuario = async (req = request, res = response) => {
   const { nombre, correo, password } = req.body;
@@ -36,7 +37,12 @@ const crearUsuario = async (req = request, res = response) => {
 const obtenerUsuario = async (req = request, res = response) => {
   const { id } = req.params;
   try {
-    const usuario = await Usuario.findById(id);
+    const usuario = await Usuario.findById(id)
+      .populate('materias', 'nombreMateria -_id')
+      .populate('tareas', 'nombreTarea estatusTarea -_id');   
+      // .populate('notas')    
+      // .populate('flashcards') 
+      // .populate('eventos');  
     res.status(200).json({
       usuario,
     });

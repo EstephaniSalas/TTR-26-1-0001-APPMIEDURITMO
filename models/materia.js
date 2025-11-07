@@ -24,7 +24,6 @@ const MateriaSchema = new Schema({
   },
   diasMateria: {
     type: [String],
-    enum: ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo'],
     required: true,
   },
   horaInicioMateria: {

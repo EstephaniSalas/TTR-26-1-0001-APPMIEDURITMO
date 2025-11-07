@@ -1,6 +1,7 @@
 const { response, request } = require("express");
 
 const Materia = require("../models/materia");
+const Usuario = require("../models/usuario");
 
 // ::: POST - Crear materia :::
 const crearMateria = async (req = request, res = response) => {
@@ -27,6 +28,13 @@ const crearMateria = async (req = request, res = response) => {
       horaFinMateria,
     });
     await materia.save();
+    //agregar materia a schema Usuario
+    await Usuario.findByIdAndUpdate(
+      id,
+      { 
+        $push: { materias: materia._id } 
+      }
+    );
     const materiaCreada = await Materia.findById(materia._id).populate(
       "usuario",
       "nombre -_id"
@@ -131,6 +139,7 @@ const modificarMateria = async (req = request, res = response) => {
   }
 };
 
+//borrar tambien de usuario
 const borrarMateria = async (req = request, res = response) => {
   try {
     const { idM } = req.params;
@@ -158,6 +167,8 @@ const borrarMateria = async (req = request, res = response) => {
   }
 };
 
+
+//falta borrar tambien de usuario
 const borrarMaterias = async (req = request, res = response) => {
   try {
     const { idU } = req.params;

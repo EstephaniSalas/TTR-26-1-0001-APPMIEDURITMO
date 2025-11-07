@@ -14,7 +14,7 @@ const { validarMateriaPorUsuario, validarMateriaUsuario, validarEliminarMateria,
 
 const router = Router();
 
-//Crear materia para un usuario por id
+//:: POST - Crear materia para un usuario por id
 //falta validar horarios cruzados
 router.post("/:id", [
   check('id').notEmpty().withMessage("El id es obligatorio").isMongoId().withMessage("No es un ID válido de MongoDB"),
@@ -30,21 +30,26 @@ router.post("/:id", [
   validarMateriaPorUsuario,
 ], crearMateria);
 
-//Obtener materia por id de la materia
+
+// :: GET - Obtener materia por id de la materia
 router.get("/:id",[
   check('id').notEmpty().withMessage('El id es obligatorio'),
   check('id', 'No es un ID válido de MongoDB').isMongoId(),
   check('id').custom(existeMateriaPorId),
   validarCampos
 ], obtenerMateria);
-//Obtener todas las materias de un usuario
+
+
+// :: GET - Obtener todas las materias de un usuario
 router.get("/idUsuario/:id",[
   check('id').notEmpty().withMessage('El id es obligatorio'),
   check('id', 'No es un ID válido de MongoDB').isMongoId(),
   check('id').custom(existeUsuarioPorId),
   validarCampos
 ], obtenerMaterias);
-//modificar materia  por id
+
+
+// :: PUT - Modificar materia  por id
 //--falta validar si son los mismos datos que ya tenia
 //falta validar que si cambia el nombre o horario no se traslape o sea duplicada
 router.put("/idUsuario/:idU/idMateria/:idM", [
@@ -65,6 +70,8 @@ router.put("/idUsuario/:idU/idMateria/:idM", [
   validarMateriaUsuario
 ], modificarMateria);
 
+
+// :: DELETE - Eliminar una materia de un usurario 
 router.delete("/idUsuario/:idU/idMateria/:idM", [
   check('idU').notEmpty().withMessage('El id de usuario es obligatorio'),
   check('idU', 'No es un ID válido de MongoDB').isMongoId(),
