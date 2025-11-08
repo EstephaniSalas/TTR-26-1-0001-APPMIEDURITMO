@@ -1,6 +1,7 @@
 const Usuario = require("../models/usuario");
 const Materia = require("../models/materia");
-const Tarea = require("../models/tarea")
+const Tarea = require("../models/tarea");
+const Nota = require("../models/nota");
 
 // :: CORREO
 //Verificar si el correo existe
@@ -42,9 +43,20 @@ const existeTareaPorId = async (id) => {
 };
 
 
+// :: NOTA
+//Verificar si existe tarea por ID para futuras rutas
+const existeNotaPorId = async (id) => {
+  const existeNota = await Nota.findById(id);
+  if (!existeNota) {
+    throw new Error(`La nota con id: ${id}, no existe`);
+  }
+};
+
+
 module.exports = {
   existeCorreo,
   existeUsuarioPorId,
   existeMateriaPorId,
-  existeTareaPorId
+  existeTareaPorId,
+  existeNotaPorId
 };

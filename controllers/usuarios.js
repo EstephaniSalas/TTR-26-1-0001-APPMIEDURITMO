@@ -39,8 +39,8 @@ const obtenerUsuario = async (req = request, res = response) => {
   try {
     const usuario = await Usuario.findById(id)
       .populate('materias', 'nombreMateria -_id')
-      .populate('tareas', 'nombreTarea estatusTarea -_id');   
-      // .populate('notas')    
+      .populate('tareas', 'nombreTarea estatusTarea -_id')
+      .populate('notas', 'nombreNota contenidoNota -_id');
       // .populate('flashcards') 
       // .populate('eventos');  
     res.status(200).json({
