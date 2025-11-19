@@ -139,10 +139,9 @@ const modificarMateria = async (req = request, res = response) => {
   }
 };
 
-//borrar tambien de usuario
 const borrarMateria = async (req = request, res = response) => {
   try {
-    const { idM } = req.params;
+    const { idM,idU} = req.params;
     const materia = req.materia;
     const infoMateria = {
       id: materia._id,
@@ -153,6 +152,7 @@ const borrarMateria = async (req = request, res = response) => {
     };
 
     await Materia.findByIdAndDelete(idM);
+    await Usuario.findByIdAndUpdate(idU, { $pull: { materias: idM } });
 
     res.json({
       msg: "Materia eliminada exitosamente",
@@ -167,8 +167,6 @@ const borrarMateria = async (req = request, res = response) => {
   }
 };
 
-
-//falta borrar tambien de usuario
 const borrarMaterias = async (req = request, res = response) => {
   try {
     const { idU } = req.params;
@@ -178,6 +176,8 @@ const borrarMaterias = async (req = request, res = response) => {
       .populate('usuario', 'nombre -_id');
 
     const resultado = await Materia.deleteMany({ usuario: idU });
+    //aliminar materias del usuario
+    await Usuario.findByIdAndUpdate(idU, { materias: [] });
 
     res.status(200).json({
       msg: "Todas las materias han sido eliminadas",

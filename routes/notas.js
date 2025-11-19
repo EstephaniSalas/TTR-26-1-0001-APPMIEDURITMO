@@ -29,6 +29,7 @@ router.post("/idUsuario/:idU", [
     validarCampos,
 ],crearNota); 
   
+
   //- Obtener Nota de usuario por ID
 router.get("/idUsuario/:idU/idNota/:idN",[
   check('idU').notEmpty().withMessage("El id del usuario es obligatorio").bail()
@@ -40,6 +41,8 @@ router.get("/idUsuario/:idU/idNota/:idN",[
     validarCampos,
     validarNotaUsuario,
 ],obtenerNota);
+
+
 // - Obtener todas las notas del usuario
 router.get("/idUsuario/:idU",[
   check('idU').notEmpty().withMessage("El id del usuario es obligatorio")
@@ -47,6 +50,8 @@ router.get("/idUsuario/:idU",[
   .custom(existeUsuarioPorId),
   validarCampos,
 ], obtenerNotas);
+
+
 //- Modificar nota de un usuario
 router.put("/idUsuario/:idU/idNota/:idN",[
   check('idU').notEmpty().withMessage("El id del usuario es obligatorio")
@@ -61,6 +66,8 @@ router.put("/idUsuario/:idU/idNota/:idN",[
   validarCampos,
   validarNotaUsuario,
 ],modificarNota);
+
+
 //- borrar la nota de un usuario
 router.delete("/idUsuario/:idU/idNota/:idN",[
   check('idU').notEmpty().withMessage("El id del usuario es obligatorio")
@@ -71,12 +78,13 @@ router.delete("/idUsuario/:idU/idNota/:idN",[
     .custom(existeNotaPorId),
   check('confirmacion')
     .notEmpty().withMessage('La confirmación es obligatoria')
-    .isBoolean().withMessage('El dato debe ser un booleano')
-    .not().isString().withMessage("El dato no puede ser un string"),
+    .isBoolean().withMessage('El dato debe ser un booleano'),
   validarCampos,
   validarEliminarNota,
   validarNotaUsuario,
 ],borrarNota);
+
+
 // -Borrar todas las notas de un usuario
 router.delete("/idUsuario/:idU",[
   check('idU').notEmpty().withMessage("El id del usuario es obligatorio")
@@ -84,8 +92,7 @@ router.delete("/idUsuario/:idU",[
     .custom(existeUsuarioPorId),
   check('confirmacion')
     .notEmpty().withMessage('La confirmación es obligatoria')
-    .isBoolean().withMessage('El dato debe ser un booleano')
-    .not().isString().withMessage("El dato no puede ser un string"),
+    .isBoolean().withMessage('El dato debe ser un booleano'),
   validarCampos,
   validarEliminarNota,
 ],borrarNotas);

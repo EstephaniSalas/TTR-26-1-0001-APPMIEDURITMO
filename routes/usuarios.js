@@ -11,7 +11,7 @@ const {
   solicitarCambioPassword,
   confirmarCambioPassword,
 } = require("../controllers/usuarios");
-const { validarPassIguales } = require("../middlewares/usuarios");
+const { validarPassIguales, validarPassNuevasIguales, validarPassActual } = require("../middlewares/usuarios");
 
 const router = Router();
 
@@ -43,13 +43,24 @@ router.put("/:id", [
   check('id').notEmpty().withMessage('El id es obligatorio'),
   check('id', 'No es un ID válido de MongoDB').isMongoId(),
   check('id').custom(existeUsuarioPorId),
-  validarCampos
+  check('nombre').optional()
+    .notEmpty().withMessage('El nombre es obligatorio'),
+  check('passwordActual').optional().notEmpty().withMessage('El password actual es obligatorio')
+    .isLength({ min: 8 }).withMessage('El password actual debe tener al menos 8 caracteres'),
+  check('passwordNueva').optional().notEmpty().withMessage('El nuevo password es obligatorio')
+    .isLength({ min: 8 }).withMessage('El nuevo password debe tener al menos 8 caracteres'),
+  check('passwordNueva2').optional().notEmpty().withMessage('La confirmación de password es obligatoria')
+    .isLength({ min: 8 }).withMessage('La confirmación de password debe tener al menos 8 caracteres'),
+    validarCampos,
+    validarPassNuevasIguales,
+    validarPassActual
 ], actualizarUsuario);
 
 // :: POST - solicitar cambio de contraseña
 router.post("/solicitud-cambio-password", [
   //validar que el correo exista
-  check('correo').notEmpty().withMessage("el campo no puede estar vacio").isEmail().withMessage("No es un correo"),
+  check('correo').notEmpty().withMessage("el campo no puede estar vacio")
+    .isEmail().withMessage("No es un correo"),
   validarCampos
 ], solicitarCambioPassword);
 

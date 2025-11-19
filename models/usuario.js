@@ -65,7 +65,11 @@ const UsuarioSchema = new Schema({
     intentosCodigo: {
         type: Number,
         default: 0
-    }
+    },
+    estado: { 
+        type: Boolean, 
+        default: true 
+    },
 });
 
 UsuarioSchema.methods.toJSON = function(){

@@ -38,7 +38,12 @@ class Server {
     //Use es  para usar un  middleware
 
     //CORS: Es un middleware que permite que mi API sea consumida desde ciertos dominios
-    this.app.use(cors());
+    this.app.use(cors({
+    origin: '*', // Permite todas las origins (para desarrollo)
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    credentials: false
+  }));
 
     //Lectura y parseo del body
     this.app.use(express.json());

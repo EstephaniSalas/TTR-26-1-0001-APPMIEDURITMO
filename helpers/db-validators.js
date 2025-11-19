@@ -1,7 +1,9 @@
+const bcryptjs = require("bcryptjs");
 const Usuario = require("../models/usuario");
 const Materia = require("../models/materia");
 const Tarea = require("../models/tarea");
 const Nota = require("../models/nota");
+const Flashcard = require("../models/flashcard");
 
 // :: CORREO
 //Verificar si el correo existe
@@ -12,7 +14,6 @@ const existeCorreo = async (correo = "") => {
   }
 };
 
-
 // :: USUARIO
 //Verificar si existe usuario por id
 const existeUsuarioPorId = async (id) => {
@@ -20,8 +21,26 @@ const existeUsuarioPorId = async (id) => {
   if (!existeUsuario) {
     throw new Error(`El id: ${id}, no existe`);
   }
+  if (existeUsuario.estado === false) {
+    throw new Error(`El id: ${id}, está desactivado`);
+  }
 };
 
+const validarPassBD = async (id, password) => {
+  const usuario = await Usuario.findById(id);
+  if (!usuario) {
+    const err = new Error(`El id: ${id}, no existe`);
+    err.status = 404;
+    throw err;
+  }
+  const validPassword = bcryptjs.compareSync(password, usuario.password);
+  if (!validPassword) {
+    const err = new Error('La contraseña no coincide con la BD');
+    err.status = 400;
+    throw err;
+  }
+  return true;
+};
 
 // :: MATERIA
 // Verificar si existe materia por id (para futuras rutas)
@@ -32,7 +51,6 @@ const existeMateriaPorId = async (id) => {
   }
 };
 
-
 // :: TAREA
 //Verificar si existe tarea por ID para futuras rutas
 const existeTareaPorId = async (id) => {
@@ -41,7 +59,6 @@ const existeTareaPorId = async (id) => {
     throw new Error(`La tarea con id: ${id}, no existe`);
   }
 };
-
 
 // :: NOTA
 //Verificar si existe tarea por ID para futuras rutas
@@ -52,11 +69,21 @@ const existeNotaPorId = async (id) => {
   }
 };
 
+// :: FLASHCARD
+//Verificar si existe flashcard por ID para futuras rutas
+const existeFlashcardPorId = async (id) => {
+  const existeFlashcard = await Flashcard.findById(id);
+  if (!existeFlashcard) {
+    throw new Error(`La flashcard con id: ${id}, no existe`);
+  }
+};
 
 module.exports = {
   existeCorreo,
   existeUsuarioPorId,
   existeMateriaPorId,
   existeTareaPorId,
-  existeNotaPorId
+  existeNotaPorId,
+  existeFlashcardPorId,
+  validarPassBD,
 };

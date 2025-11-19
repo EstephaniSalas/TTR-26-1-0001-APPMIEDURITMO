@@ -8,29 +8,36 @@ const {
 } = require("../helpers/correo");
 const usuario = require("../models/usuario");
 
-
 //:::::: CREAR USUARIO - POST :::::::
 const crearUsuario = async (req = request, res = response) => {
   const { nombre, correo, password } = req.body;
+  try {
+    //  guardar usuario en base de datos
+    const usuario = new Usuario({
+      nombre,
+      correo,
+      password,
+    });
 
-  //  guardar usuario en base de datos
-  const usuario = new Usuario({
-    nombre,
-    correo,
-    password,
-  });
+    //  encriptar la contraseña
+    const salt = bcryptjs.genSaltSync(10);
+    usuario.password = bcryptjs.hashSync(password, salt);
 
-  //  encriptar la contraseña
-  const salt = bcryptjs.genSaltSync(10);
-  usuario.password = bcryptjs.hashSync(password, salt);
+    //  guardar en bd
+    await usuario.save();
 
-  //  guardar en bd
-  await usuario.save();
-
-  res.json({
-    msg: "usuario creado correctamente",
-    usuario,
-  });
+    res.json({
+      msg: "usuario creado correctamente",
+      usuario,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      msg: "Error interno del servidor al crear usuario.",
+      error: error.message
+    })
+    
+  }
 };
 
 //:::::: OBTENER USUARIO - GET ::::::
@@ -38,11 +45,11 @@ const obtenerUsuario = async (req = request, res = response) => {
   const { id } = req.params;
   try {
     const usuario = await Usuario.findById(id)
-      .populate('materias', 'nombreMateria -_id')
-      .populate('tareas', 'nombreTarea estatusTarea -_id')
-      .populate('notas', 'nombreNota contenidoNota -_id');
-      // .populate('flashcards') 
-      // .populate('eventos');  
+      .populate("materias", "nombreMateria -_id")
+      .populate("tareas", "nombreTarea estatusTarea -_id")
+      .populate("notas", "nombreNota contenidoNota -_id");
+    // .populate('flashcards')
+    // .populate('eventos');
     res.status(200).json({
       usuario,
     });
@@ -55,31 +62,53 @@ const obtenerUsuario = async (req = request, res = response) => {
 };
 
 //:::::: ACTUALIZAR USUARIO - PUT ::::::
-const actualizarUsuario = async (req, res = response) => {
+const actualizarUsuario = async (req = request, res = response) => {
   const { id } = req.params;
-  const { nombre } = req.body; //RESTO = Datos que e pueden ser actualizados
-
-
-  const usuario = await Usuario.findByIdAndUpdate(id, nombre,{new: true});
-
-  res.json({
-    msg: "actualizar usuario - controlador",
-    usuario,
-  });
+  const { nombre, passwordNueva } = req.body;
+  const datosActualizar = { };
+  if( nombre !== undefined) {
+    datosActualizar.nombre = nombre;
+  }
+  if( passwordNueva !== undefined ) {
+    //  encriptar la contraseña
+    const salt = bcryptjs.genSaltSync(10);
+    datosActualizar.password = bcryptjs.hashSync(passwordNueva, salt);
+  }
+  if (Object.keys(datosActualizar).length === 0) {
+    return res.status(400).json({
+      msg: "No hay datos para actualizar",
+    });
+  }
+  try {
+    const usuario = await Usuario.findByIdAndUpdate(id, datosActualizar, {new: true});
+    res.json({
+      msg: "Usuario actualizado correctamente",
+      usuario,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      msg: "Error interno del servidor al actualizar usuario.",
+      error: error.message
+    });
+  }
 };
 
 const borrarUsuario = async (req, res = response) => {
   const { id } = req.params;
-
-  //Borrar fisicamente
-  //const usuario = await Usuario.findByIdAndDelete(id);
-
-  const usuario = await Usuario.findByIdAndUpdate(id, { estado: false });
-
-  res.json({
-    msg: "borrar usuario - controlador",
-    usuario,
-  });
+  try {
+    const usuario = await Usuario.findByIdAndUpdate(id, { estado: false }, { new: true });
+    res.json({
+      msg: "Usuario eliminado correctamente",
+      usuario,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      msg: "Error interno del servidor al desactivar usuario.",
+      error: error.message
+    });
+  }
 };
 
 const solicitarCambioPassword = async (req, res = response) => {
@@ -148,7 +177,6 @@ const confirmarCambioPassword = async (req, res = response) => {
         msg: "El código ha expirado",
       });
     }
-
 
     // Hashear nueva contraseña
     const salt = bcryptjs.genSaltSync();
