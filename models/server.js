@@ -13,7 +13,7 @@ class Server {
       eventos: "/api/eventos",
       tareas: "/api/tareas",
       notas: "/api/notas",
-      flashcards: "/api/flashcard",
+      flashcards: "/api/flashcards",
       autenticacion: "/api/autenticacion",
     };
     
