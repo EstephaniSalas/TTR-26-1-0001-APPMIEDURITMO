@@ -70,6 +70,10 @@ const UsuarioSchema = new Schema({
         type: Boolean, 
         default: true 
     },
+    codigoVerificacionValidado: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 UsuarioSchema.methods.toJSON = function(){

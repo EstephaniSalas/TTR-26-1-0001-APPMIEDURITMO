@@ -2,6 +2,8 @@ const { Router } = require("express");
 const { check } = require("express-validator");
 const { validarCampos } = require("../middlewares/validar-campos");
 const { existeUsuarioPorId, existeMateriaPorId } = require("../helpers/db-validators");
+const { validarJWT } = require("../middlewares/validar-jwt");
+
 const {
   crearMateria,
   obtenerMateria,
@@ -14,9 +16,12 @@ const { validarMateriaPorUsuario, validarMateriaUsuario, validarEliminarMateria,
 
 const router = Router();
 
-//:: POST - Crear materia para un usuario por id
+
+
+// ::: POST - Crear materia para un usuario por id :::
 //falta validar horarios cruzados
 router.post("/:id", [
+  validarJWT,
   check('id').notEmpty().withMessage("El id es obligatorio").isMongoId().withMessage("No es un ID válido de MongoDB"),
   check('id').custom(existeUsuarioPorId),
   check('nombreMateria', 'El nombre de la materia es obligatorio').not().isEmpty(),
@@ -31,8 +36,10 @@ router.post("/:id", [
 ], crearMateria);
 
 
-// :: GET - Obtener materia por id de la materia
+
+// :;: GET - Obtener materia por id de la materia :::
 router.get("/:id",[
+  validarJWT,
   check('id').notEmpty().withMessage('El id es obligatorio'),
   check('id', 'No es un ID válido de MongoDB').isMongoId(),
   check('id').custom(existeMateriaPorId),
@@ -40,8 +47,10 @@ router.get("/:id",[
 ], obtenerMateria);
 
 
-// :: GET - Obtener todas las materias de un usuario
+
+// ::: GET - Obtener todas las materias de un usuario :::
 router.get("/idUsuario/:id",[
+  validarJWT,
   check('id').notEmpty().withMessage('El id es obligatorio'),
   check('id', 'No es un ID válido de MongoDB').isMongoId(),
   check('id').custom(existeUsuarioPorId),
@@ -49,10 +58,12 @@ router.get("/idUsuario/:id",[
 ], obtenerMaterias);
 
 
-// :: PUT - Modificar materia  por id
+
+// ::: PUT - Modificar materia  por id :::
 //--falta validar si son los mismos datos que ya tenia
 //falta validar que si cambia el nombre o horario no se traslape o sea duplicada
 router.put("/idUsuario/:idU/idMateria/:idM", [
+  validarJWT,
   check('idU').notEmpty().withMessage('El id de usuario es obligatorio'),
   check('idU', 'No es un ID válido de MongoDB').isMongoId(),
   check('idU').custom(existeUsuarioPorId),
@@ -71,8 +82,10 @@ router.put("/idUsuario/:idU/idMateria/:idM", [
 ], modificarMateria);
 
 
-// :: DELETE - Eliminar una materia de un usurario 
+
+// ::: DELETE - Eliminar una materia de un usurario :::
 router.delete("/idUsuario/:idU/idMateria/:idM", [
+  validarJWT,
   check('idU').notEmpty().withMessage('El id de usuario es obligatorio'),
   check('idU', 'No es un ID válido de MongoDB').isMongoId(),
   check('idU').custom(existeUsuarioPorId),
@@ -87,8 +100,11 @@ router.delete("/idUsuario/:idU/idMateria/:idM", [
   validarMateriaUsuario,
 ], borrarMateria);
 
-// Borrar TODAS las materias de un usuario
+
+
+// Delete - Borrar TODAS las materias de un usuario :::
 router.delete("/idUsuario/:idU", [
+  validarJWT,
   check('idU').notEmpty().withMessage('El id de usuario es obligatorio'),
   check('idU', 'No es un ID válido de MongoDB').isMongoId(),
   check('idU').custom(existeUsuarioPorId),

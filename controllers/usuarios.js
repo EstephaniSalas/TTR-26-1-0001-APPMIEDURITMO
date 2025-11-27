@@ -2,11 +2,9 @@ const { response, request } = require("express");
 const bcryptjs = require("bcryptjs"); //libreria para encriptar contraseñas
 
 const Usuario = require("../models/usuario");
-const {
-  generarCodigoVerificacion,
-  enviarCorreo,
-} = require("../helpers/correo");
-const usuario = require("../models/usuario");
+const {generarCodigoVerificacion,enviarCorreo} = require("../helpers/correo");
+
+
 
 //:::::: CREAR USUARIO - POST :::::::
 const crearUsuario = async (req = request, res = response) => {
@@ -40,6 +38,8 @@ const crearUsuario = async (req = request, res = response) => {
   }
 };
 
+
+
 //:::::: OBTENER USUARIO - GET ::::::
 const obtenerUsuario = async (req = request, res = response) => {
   const { id } = req.params;
@@ -47,9 +47,9 @@ const obtenerUsuario = async (req = request, res = response) => {
     const usuario = await Usuario.findById(id)
       .populate("materias", "nombreMateria -_id")
       .populate("tareas", "nombreTarea estatusTarea -_id")
-      .populate("notas", "nombreNota contenidoNota -_id");
-    // .populate('flashcards')
-    // .populate('eventos');
+      .populate("notas", "nombreNota contenidoNota -_id")
+      .populate("flashcards", "delanteFlashcard -_id")
+      .populate("eventos", "tituloEvento fechaEvento -_id");
     res.status(200).json({
       usuario,
     });
@@ -60,6 +60,8 @@ const obtenerUsuario = async (req = request, res = response) => {
     });
   }
 };
+
+
 
 //:::::: ACTUALIZAR USUARIO - PUT ::::::
 const actualizarUsuario = async (req = request, res = response) => {
@@ -94,13 +96,20 @@ const actualizarUsuario = async (req = request, res = response) => {
   }
 };
 
+
+
+//:::::: BORRAR USUARIO - DELETE ::::::
 const borrarUsuario = async (req, res = response) => {
   const { id } = req.params;
+  const uid = req.uid;
+
   try {
     const usuario = await Usuario.findByIdAndUpdate(id, { estado: false }, { new: true });
+    const usuarioAutenticado = req.usuario;
     res.json({
       msg: "Usuario eliminado correctamente",
       usuario,
+      usuarioAutenticado,
     });
   } catch (error) {
     console.log(error);
@@ -111,15 +120,20 @@ const borrarUsuario = async (req, res = response) => {
   }
 };
 
+
+
+//:::::: SOLICITAR CAMBIO DE PASSWORD ::::::
 const solicitarCambioPassword = async (req, res = response) => {
   try {
     const { correo } = req.body;
     const usuario = await Usuario.findOne({ correo });
+
     if (!usuario) {
       return res.status(400).json({
         msg: "Usuario no encontrado",
       });
     }
+
     // Generar código y fecha de expiración (15 minutos)
     const codigo = generarCodigoVerificacion();
     const expiracion = new Date(Date.now() + 15 * 60 * 1000);
@@ -128,8 +142,10 @@ const solicitarCambioPassword = async (req, res = response) => {
     usuario.codigoVerificacion = codigo;
     usuario.expiracionCodigo = expiracion;
     usuario.intentosCodigo = 0;
+    usuario.codigoVerificacionValidado = false;  // <<< CAMBIO CLAVE
 
     await usuario.save();
+
     // Enviar email
     await enviarCorreo(usuario.correo, usuario.nombre, codigo);
 
@@ -144,17 +160,20 @@ const solicitarCambioPassword = async (req, res = response) => {
   }
 };
 
-const confirmarCambioPassword = async (req, res = response) => {
-  try {
-    const { correo, codigo, password } = req.body;
 
-    // Buscar usuario
+
+//:::::: VALIDAR CÓDIGO (SOLO PARA PANTALLA DE VERIFICACIÓN) ::::::
+const validarCodigo = async (req, res = response) => {
+  try {
+    const { correo, codigo } = req.body;
+
     const usuario = await Usuario.findOne({ correo });
     if (!usuario) {
       return res.status(400).json({
         msg: "Usuario no encontrado",
       });
     }
+
     // Limitar intentos
     if (usuario.intentosCodigo >= 5) {
       return res.status(400).json({
@@ -162,19 +181,62 @@ const confirmarCambioPassword = async (req, res = response) => {
       });
     }
 
-    // Verificar código y expiración
-    if (usuario.codigoVerificacion !== codigo) {
+    const codigoGuardado = String(usuario.codigoVerificacion || "").trim();
+    const codigoIngresado = String(codigo || "").trim();
+
+    if (codigoGuardado !== codigoIngresado) {
       usuario.intentosCodigo += 1;
       await usuario.save();
-
       return res.status(400).json({
         msg: "Código de verificación incorrecto",
       });
     }
 
-    if (new Date() > usuario.expiracionCodigo) {
+    if (!usuario.expiracionCodigo || new Date() > usuario.expiracionCodigo) {
       return res.status(400).json({
         msg: "El código ha expirado",
+      });
+    }
+
+    // >>> AQUÍ MARCAMOS QUE EL CÓDIGO YA FUE VALIDADO <<<
+    usuario.codigoVerificacionValidado = true;
+    await usuario.save();
+
+    return res.json({
+      msg: "Código válido",
+    });
+  } catch (error) {
+    console.log("Error en validarCodigo:", error);
+    return res.status(500).json({
+      msg: "Error interno del servidor.",
+    });
+  }
+};
+
+
+
+
+//:::::: CONFIRMAR CAMBIO DE PASSWORD (VALIDA CÓDIGO + CAMBIA PASSWORD) ::::::
+const confirmarCambioPassword = async (req, res = response) => {
+  try {
+    const { correo, password } = req.body;
+
+    const usuario = await Usuario.findOne({ correo });
+    if (!usuario) {
+      return res.status(400).json({ msg: "Usuario no encontrado" });
+    }
+
+    // >>> BLOQUEO SI NO HA PASADO POR /validarCodigo <<<
+    if (!usuario.codigoVerificacionValidado) {
+      return res.status(400).json({
+        msg: "Debes validar el código de verificación antes de cambiar la contraseña",
+      });
+    }
+
+    // (opcional) puedes volver a checar expiración si quieres doble seguridad
+    if (!usuario.expiracionCodigo || new Date() > usuario.expiracionCodigo) {
+      return res.status(400).json({
+        msg: "El código ha expirado, solicita uno nuevo",
       });
     }
 
@@ -182,23 +244,26 @@ const confirmarCambioPassword = async (req, res = response) => {
     const salt = bcryptjs.genSaltSync();
     usuario.password = bcryptjs.hashSync(password, salt);
 
-    // Limpiar código de verificación
+    // Limpiar todo lo relacionado al código
     usuario.codigoVerificacion = null;
     usuario.expiracionCodigo = null;
     usuario.intentosCodigo = 0;
+    usuario.codigoVerificacionValidado = false;
 
     await usuario.save();
 
-    res.json({
+    return res.json({
       msg: "Contraseña actualizada exitosamente",
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({
+    console.log("Error en confirmarCambioPassword:", error);
+    return res.status(500).json({
       msg: "Error interno del servidor.",
     });
   }
 };
+
+
 
 module.exports = {
   obtenerUsuario,
@@ -207,4 +272,5 @@ module.exports = {
   borrarUsuario,
   solicitarCambioPassword,
   confirmarCambioPassword,
+  validarCodigo,
 };

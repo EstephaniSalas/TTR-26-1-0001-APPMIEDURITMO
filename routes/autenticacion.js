@@ -1,13 +1,29 @@
-const {Router} = require('express');
-const { iniciarSesion, verificarJWT, cerrarSesion } = require('../controllers/autenticacion');
+// routes/autenticacion.js
+const { Router } = require("express");
+const { check } = require("express-validator");
+const { validarCampos } = require("../middlewares/validar-campos");
+
+const { loginUsuario, verificarJWT, cerrarSesion } = require("../controllers/autenticacion");
+const { validarUsuarioLogin, validarPasswordLogin } = require("../middlewares/autenticacion");
 
 const router = Router();
 
-router.post('/iniciarSesion',iniciarSesion);
+// :: POST - Login usuario
+router.post("/login", [
+  check('correo')
+    .notEmpty().withMessage("El correo es obligatorio")
+    .isEmail().withMessage("El correo no es valido"),
+  check('password')
+    .notEmpty().withMessage("El password es obligatorio"),
+  validarCampos,
+  validarUsuarioLogin, // Valida si el correo existe y si el usuario está activo
+  validarPasswordLogin, // Valida que la contraseña coincida
+], loginUsuario);
 
-router.get('/verificarJWT',verificarJWT);
+// Simple endpoint para probar/verificar un token
+router.get("/verificarJWT", verificarJWT);
 
-router.post('/cerrarSesion',cerrarSesion);
-
+// Endpoint "dummy" para cerrar sesión (lado servidor no invalida JWT, solo a nivel cliente)
+router.post("/cerrarSesion", cerrarSesion);
 
 module.exports = router;

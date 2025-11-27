@@ -1,11 +1,12 @@
 const express = require("express");
 const cors = require("cors");
 const { dbConection } = require("../database/config");
+const cookieParser = require("cookie-parser");
 
 class Server {
   constructor() {
     this.app = express();
-    this.port = process.env.PORT;
+    this.port = process.env.PORT || 3333;
 
     this.paths = {
       usuarios: "/api/usuarios",
@@ -42,11 +43,14 @@ class Server {
     origin: '*', // Permite todas las origins (para desarrollo)
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-    credentials: false
+    credentials: true
   }));
 
     //Lectura y parseo del body
     this.app.use(express.json());
+
+    // Habilitar cookie-parser
+    this.app.use(cookieParser());
 
     //Directorio publico
     this.app.use(express.static("public"));

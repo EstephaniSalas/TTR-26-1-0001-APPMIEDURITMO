@@ -1,6 +1,7 @@
 const { Router } = require("express");
 const { check } = require("express-validator");
 const { validarCampos } = require("../middlewares/validar-campos");
+const { validarJWT } = require("../middlewares/validar-jwt");
 
 const {
   crearNota,
@@ -19,8 +20,9 @@ const { validarNotaUsuario, validarEliminarNota } = require("../middlewares/nota
 
 const router = Router();
 
-// Crear nota por usuario
+// ::: Post - Crear nota por usuario :::
 router.post("/idUsuario/:idU", [
+  validarJWT,
     check("idU").notEmpty() .withMessage("El id del usuario es obligatorio")
       .isMongoId().withMessage("No es un ID usuario válido de MongoDB")
       .custom(existeUsuarioPorId),
@@ -30,8 +32,10 @@ router.post("/idUsuario/:idU", [
 ],crearNota); 
   
 
-  //- Obtener Nota de usuario por ID
+
+// ::: Get - Obtener Nota de usuario por ID :::
 router.get("/idUsuario/:idU/idNota/:idN",[
+  validarJWT,
   check('idU').notEmpty().withMessage("El id del usuario es obligatorio").bail()
     .isMongoId().withMessage("No es un ID valido de mongo")
     .custom(existeUsuarioPorId),
@@ -43,8 +47,10 @@ router.get("/idUsuario/:idU/idNota/:idN",[
 ],obtenerNota);
 
 
-// - Obtener todas las notas del usuario
+
+// ::: Get - Obtener todas las notas del usuario :::
 router.get("/idUsuario/:idU",[
+  validarJWT,
   check('idU').notEmpty().withMessage("El id del usuario es obligatorio")
   .isMongoId().withMessage("No es un ID valido de mongo")
   .custom(existeUsuarioPorId),
@@ -52,8 +58,10 @@ router.get("/idUsuario/:idU",[
 ], obtenerNotas);
 
 
-//- Modificar nota de un usuario
+
+// ::: Put- Modificar nota de un usuario :::
 router.put("/idUsuario/:idU/idNota/:idN",[
+  validarJWT,
   check('idU').notEmpty().withMessage("El id del usuario es obligatorio")
     .isMongoId().withMessage("No es un ID valido de mongo")
     .custom(existeUsuarioPorId),
@@ -68,8 +76,10 @@ router.put("/idUsuario/:idU/idNota/:idN",[
 ],modificarNota);
 
 
-//- borrar la nota de un usuario
+
+// ::: Delete - borrar la nota de un usuario :::
 router.delete("/idUsuario/:idU/idNota/:idN",[
+  validarJWT,
   check('idU').notEmpty().withMessage("El id del usuario es obligatorio")
     .isMongoId().withMessage("No es un ID valido de mongo")
     .custom(existeUsuarioPorId),
@@ -85,8 +95,10 @@ router.delete("/idUsuario/:idU/idNota/:idN",[
 ],borrarNota);
 
 
-// -Borrar todas las notas de un usuario
+
+// ::: Delete -Borrar todas las notas de un usuario :::
 router.delete("/idUsuario/:idU",[
+  validarJWT,
   check('idU').notEmpty().withMessage("El id del usuario es obligatorio")
     .isMongoId().withMessage("No es un ID valido de mongo")
     .custom(existeUsuarioPorId),

@@ -1,6 +1,7 @@
 const { Router } = require("express");
 const { check } =  require("express-validator");
 const { validarCampos } = require("../middlewares/validar-campos");
+const { validarJWT } = require("../middlewares/validar-jwt");
 
 const { crearFlashcard, obtenerFlashcard, obtenerFlashcardsPorMateria,
         borrarFlashcard, modificarFlascard, 
@@ -11,8 +12,10 @@ const {validarFlashcardUsuario, validarCamposFlashcard, validarEliminarFlashcard
 
 const router = Router();
 
+
 // :: POST - Crear flashcard por usuario - listo
 router.post("/idUsuario/:idU/idMateria/:idM", [
+    validarJWT,
     check("idU").notEmpty().withMessage("El id del usuario es obligatorio")
      .isMongoId().withMessage("No es un ID usuario válido de MongoDB").custom(existeUsuarioPorId),
     check("idM").notEmpty().withMessage("El id de la materia es obligatorio")
@@ -24,8 +27,10 @@ router.post("/idUsuario/:idU/idMateria/:idM", [
 ], crearFlashcard ); 
 
 
+
 // :: GET - Obtener una flashcard  por usuario y materia -listo
 router.get("/idUsuario/:idU/idFlashcard/:idF", [
+    validarJWT,
     check("idU").notEmpty().withMessage("El id del usuario es obligatorio")
      .isMongoId().withMessage("No es un ID usuario válido de MongoDB"),
     check("idF").notEmpty().withMessage("El id de la flashcard es obligatorio")
@@ -35,8 +40,10 @@ router.get("/idUsuario/:idU/idFlashcard/:idF", [
 ], obtenerFlashcard );
 
 
+
 // :: GET - Obtener todas las flashcards por materia - listo
 router.get("/idUsuario/:idU/idMateria/:idM", [
+    validarJWT,
   check("idU")
     .notEmpty().withMessage("El id del usuario es obligatorio")
     .isMongoId().withMessage("No es un ID usuario válido de MongoDB")
@@ -49,7 +56,11 @@ router.get("/idUsuario/:idU/idMateria/:idM", [
   validarMateriaUsuario,
 ], obtenerFlashcardsPorMateria);
 
+
+
+// :: Put - Modificar flashcard por usuario y materia 
 router.put("/idUsuario/:idU/idFlashcard/:idF",[
+    validarJWT,
     check("idU").notEmpty().withMessage("El id del usuario es obligatorio")
         .isMongoId().withMessage("No es un ID usuario válido de MongoDB")
         .custom(existeUsuarioPorId),
@@ -62,7 +73,11 @@ router.put("/idUsuario/:idU/idFlashcard/:idF",[
     validarCamposFlashcard,
 ], modificarFlascard); 
 
+
+
+// :: Delete - Borrar flashcard por usuario y materia
 router.delete("/idUsuario/:idU/idFlashcard/:idF",[
+    validarJWT,
     check("idU").notEmpty().withMessage("El id del usuario es obligatorio")
         .isMongoId().withMessage("No es un ID usuario válido de MongoDB")
         .custom(existeUsuarioPorId),
@@ -75,7 +90,11 @@ router.delete("/idUsuario/:idU/idFlashcard/:idF",[
     validarEliminarFlashcards,
 ], borrarFlashcard ); 
 
+
+
+// :: Delete - Borrar todas las flashcards del usuario
 router.delete("/idUsuario/:idU",[
+    validarJWT,
     check("idU").notEmpty().withMessage("El id del usuario es obligatorio")
         .isMongoId().withMessage("No es un ID usuario válido de MongoDB")
         .custom(existeUsuarioPorId),

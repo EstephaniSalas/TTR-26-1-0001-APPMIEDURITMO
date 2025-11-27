@@ -1,5 +1,8 @@
 const { request, response } = require("express");
+const bcryptjs = require("bcryptjs");
+const Usuario = require("../models/usuario");
 const { validarPassBD } = require("../helpers/db-validators");
+
 
 const validarPassIguales = (req, res, next) => {
   const { password, password2 } = req.body;
