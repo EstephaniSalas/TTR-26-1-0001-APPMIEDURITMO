@@ -4,6 +4,8 @@ const Materia = require("../models/materia");
 const Tarea = require("../models/tarea");
 const Nota = require("../models/nota");
 const Flashcard = require("../models/flashcard");
+const Evento = require("../models/evento");
+
 
 // :: CORREO
 //Verificar si el correo existe
@@ -78,6 +80,15 @@ const existeFlashcardPorId = async (id) => {
   }
 };
 
+// :: EVENTO
+//Verificar si existe flashcard por ID para futuras rutas
+const existeEventoPorId = async (id) => {
+  const existeEvento = await Evento.findById(id);
+  if (!existeEvento) {
+    throw new Error(`El evento con id: ${id}, no existe`);
+  }
+};
+
 module.exports = {
   existeCorreo,
   existeUsuarioPorId,
@@ -86,4 +97,5 @@ module.exports = {
   existeNotaPorId,
   existeFlashcardPorId,
   validarPassBD,
+  existeEventoPorId
 };
