@@ -1,7 +1,6 @@
 const { Router } = require("express");
 const { check } = require("express-validator");
-const { validarCampos } = require("../middlewares/validar-campos");
-const {validarTareaUsuario, validarEliminarTarea} = require("../middlewares/tareas");
+
 const {
   crearTarea,
   obtenerTarea,
@@ -11,114 +10,180 @@ const {
   cambiarStatusTarea,
   borrarTareas,
 } = require("../controllers/tareas");
+
 const {
   existeUsuarioPorId,
   existeMateriaPorId,
   existeTareaPorId,
 } = require("../helpers/db-validators");
 
+const { validarCampos } = require("../middlewares/validar-campos");
+const {
+  validarTareaUsuario,
+  validarEliminarTarea,
+  validarHoraEntrega24,
+  validarHoraEntrega24Opcional,
+  validarCamposTareaUpdate,
+} = require("../middlewares/tareas");
+const { validarJWT } = require("../middlewares/validar-jwt");
+
 const router = Router();
 
-//:: POST - Crear tarea para para un usuario por id
-router.post(
-  "/:id",
-  [
-    check("id").notEmpty() .withMessage("El id del usuario es obligatorio").isMongoId().withMessage("No es un ID usuario válido de MongoDB"),
-    check("id").custom(existeUsuarioPorId),
-    check("nombreTarea", "El nombre de la tarea es obligatorio").not().isEmpty(),
-    check("materiaTarea").optional().isMongoId().withMessage("ID de materia inválido"),
-    check("tipoTarea").optional().isIn(["Tarea", "Proyecto", "Examen"]).withMessage("Tipo de tarea inválido"),
-    check("fechaEntregaTarea", "La fecha de entrega es obligatoria").not().isEmpty(),
-    check("horaEntregaTarea", "La hora de entrega es obligatoria").not().isEmpty(),
-    check("prioridadTarea").optional().isBoolean().withMessage("La prioridad debe ser un valor booleano"),
-    check("estatusTarea").notEmpty().withMessage("El estatus es obligatorio").isIn(["Pendiente", "Completada"]).withMessage("Estatus inválido"),
-    validarCampos,
-  ],
-  crearTarea
-);
-
-// :: GET - OBTNER TAREA
-router.get("/idUsuario/:idU/idTarea/:idT",[
-    // Validaciones de IDs en URL
-    check("idU").notEmpty().withMessage("El ID del usuario es obligatorio").isMongoId().withMessage("No es un ID válido de MongoDB"),
-    check("idU").custom(existeUsuarioPorId),
-    check("idT").notEmpty().withMessage("El ID de la tarea es obligatorio").isMongoId().withMessage("No es un ID válido de MongoDB"),
-    check("idT").custom(existeTareaPorId),
-    validarCampos,
-    validarTareaUsuario,
-  ], obtenerTarea);
 
 
-//:: GET . Obtner todas las tareas de un usuario
-router.get("/idUsuario/:id", [
-    check('id').notEmpty().withMessage('El id es obligatorio'),
-    check('id', 'No es un ID válido de MongoDB').isMongoId(),
-    check('id').custom(existeUsuarioPorId),
-    validarCampos
-  ], obtenerTareas);
+//:: POST - Crear tarea para un usuario ::
+router.post("/idUsuario/:idU", [
+  validarJWT,
+  check("idU")
+    .notEmpty().withMessage("El id del usuario es obligatorio")
+    .isMongoId().withMessage("No es un ID usuario válido de MongoDB")
+    .custom(existeUsuarioPorId),
+  check("nombreTarea", "El nombre de la tarea es obligatorio").not().isEmpty(),
+  check("materiaTarea")
+    .optional()
+    .isMongoId().withMessage("ID de materia inválido")
+    .custom(existeMateriaPorId),
+  check("tipoTarea")
+    .optional()
+    .isIn(["Tarea", "Proyecto", "Examen"])
+    .withMessage("Tipo de tarea inválido"),
+  check("fechaEntregaTarea")
+    .notEmpty().withMessage("La fecha de entrega es obligatoria")
+    .isISO8601().withMessage("La fecha debe tener formato válido (YYYY-MM-DD)")
+    .toDate(),
+  check("horaEntregaTarea")
+    .notEmpty().withMessage("La hora de entrega es obligatoria"),
+  check("descripcionTarea")
+    .optional()
+    .isString().withMessage("La descripción debe ser texto"),
+  check("estatusTarea")
+    .optional()
+    .isIn(["Pendiente", "Completada"])
+    .withMessage("Estatus inválido"),
+  validarCampos,
+  validarHoraEntrega24, // valida formato HH:MM y rango
+], crearTarea);
 
 
-// :: PUT - Actualizar tarea de un usuario por id
+
+//:: GET - Obtener una tarea ::
+router.get("/idUsuario/:idU/idTarea/:idT", [
+  validarJWT,
+  check("idU")
+    .notEmpty().withMessage("El ID del usuario es obligatorio")
+    .isMongoId().withMessage("No es un ID válido de MongoDB")
+    .custom(existeUsuarioPorId),
+  check("idT")
+    .notEmpty().withMessage("El ID de la tarea es obligatorio")
+    .isMongoId().withMessage("No es un ID válido de MongoDB")
+    .custom(existeTareaPorId),
+  validarCampos,
+  validarTareaUsuario,
+], obtenerTarea);
+
+
+
+//:: GET - Obtener todas las tareas de un usuario ::
+router.get("/idUsuario/:idU", [
+  validarJWT,
+  check("idU")
+    .notEmpty().withMessage("El id es obligatorio")
+    .isMongoId().withMessage("No es un ID válido de MongoDB")
+    .custom(existeUsuarioPorId),
+  validarCampos,
+], obtenerTareas);
+
+
+
+//:: PUT - Actualizar tarea de un usuario ::
 router.put("/idUsuario/:idU/idTarea/:idT", [
-    check('idU').notEmpty().withMessage('El id de usuario es obligatorio'),
-    check('idU', 'No es un ID válido de MongoDB').isMongoId(),
-    check('idU').custom(existeUsuarioPorId),
-    check('idT').notEmpty().withMessage('El id de la tarea es obligatorio'),
-    check('idT', 'No es un ID válido de MongoDB').isMongoId(),
-    check('idT').custom(existeTareaPorId),
-    check("nombreTarea", "El nombre de la tarea es obligatorio").not().isEmpty(),
-    check("materiaTarea").optional().isMongoId().withMessage("ID de materia inválido"),
-    check("tipoTarea").optional().isIn(["Tarea", "Proyecto", "Examen"]).withMessage("Tipo de tarea inválido"),
-    check("fechaEntregaTarea", "La fecha de entrega es obligatoria").not().isEmpty(),
-    check("horaEntregaTarea", "La hora de entrega es obligatoria").not().isEmpty(),
-    check("prioridadTarea").optional().isBoolean().withMessage("La prioridad debe ser un valor booleano"),
-    validarCampos,
-    validarTareaUsuario,
+  validarJWT,
+  check("idU")
+    .notEmpty().withMessage("El id de usuario es obligatorio")
+    .isMongoId().withMessage("No es un ID válido de MongoDB")
+    .custom(existeUsuarioPorId),
+  check("idT")
+    .notEmpty().withMessage("El id de la tarea es obligatorio")
+    .isMongoId().withMessage("No es un ID válido de MongoDB")
+    .custom(existeTareaPorId),
+  check("nombreTarea").optional()
+    .notEmpty().withMessage("El nombre de la tarea no puede ir vacío"),
+  check("materiaTarea").optional()
+    .isMongoId().withMessage("ID de materia inválido")
+    .custom(existeMateriaPorId),
+  check("tipoTarea").optional()
+    .isIn(["Tarea", "Proyecto", "Examen"])
+    .withMessage("Tipo de tarea inválido"),
+  check("fechaEntregaTarea").optional()
+    .isISO8601().withMessage("La fecha debe tener formato válido (YYYY-MM-DD)")
+    .toDate(),
+  check("horaEntregaTarea").optional()
+    .notEmpty().withMessage("La hora de entrega no puede ir vacía"),
+  check("descripcionTarea").optional()
+    .isString().withMessage("La descripción debe ser texto"),
+  check("estatusTarea").optional()
+    .isIn(["Pendiente", "Completada", "Vencida"])
+    .withMessage("Estatus inválido"),
+  validarCampos,
+  validarTareaUsuario,
+  validarCamposTareaUpdate,     // al menos un campo
+  validarHoraEntrega24Opcional, // valida hora si viene
 ], actualizarTarea);
 
 
-// :: PATCH - Mpdifircar estatus materia
-router.patch(
-  "/idUsuario/:idU/idTarea/:idT/estatus",
-  [
-    check("idU").notEmpty().withMessage("El ID del usuario es obligatorio").isMongoId().withMessage("No es un ID válido de MongoDB"),
-    check("idU").custom(existeUsuarioPorId),
-    check("idT").notEmpty().withMessage("El ID de la tarea es obligatorio").isMongoId().withMessage("No es un ID válido de MongoDB"),
-    check("idT").custom(existeTareaPorId),
-    // Validación del body (solo estatus)
-    check("estatusTarea").notEmpty().withMessage("El estatus es obligatorio").isIn(["Pendiente", "Completada"]).withMessage("Estatus inválido"),
-    validarCampos,
-    validarTareaUsuario,
-  ],
-  cambiarStatusTarea
-);
+
+//:: PATCH - Cambiar estatus de tarea ::
+router.patch("/idUsuario/:idU/idTarea/:idT/estatus", [
+  validarJWT,
+  check("idU")
+    .notEmpty().withMessage("El ID del usuario es obligatorio")
+    .isMongoId().withMessage("No es un ID válido de MongoDB")
+    .custom(existeUsuarioPorId),
+  check("idT")
+    .notEmpty().withMessage("El ID de la tarea es obligatorio")
+    .isMongoId().withMessage("No es un ID válido de MongoDB")
+    .custom(existeTareaPorId),
+  check("estatusTarea")
+    .notEmpty().withMessage("El estatus es obligatorio")
+    .isIn(["Pendiente", "Completada", "Vencida"])
+    .withMessage("Estatus inválido"),
+  validarCampos,
+  validarTareaUsuario,
+], cambiarStatusTarea);
 
 
-// :: DELETE - Eliminar una tarea de un usuario
+
+//:: DELETE - Eliminar una tarea de un usuario ::
 router.delete("/idUsuario/:idU/idTarea/:idT", [
-    check('idU').notEmpty().withMessage('El id de usuario es obligatorio'),
-      check('idU', 'No es un ID válido de MongoDB').isMongoId(),
-      check('idU').custom(existeUsuarioPorId),
-      check('idT').notEmpty().withMessage('El id de la tarea es obligatorio'),
-      check('idT', 'No es un ID válido de MongoDB').isMongoId(),
-      check('idT').custom(existeTareaPorId),
-      check('confirmacion')
-        .notEmpty().withMessage('La confirmación es obligatoria')
-        .isBoolean().withMessage('El dato debe ser un booleano'),
-      validarCampos,
-      validarEliminarTarea,
-      validarTareaUsuario,
-],borrarTarea);
+  validarJWT,
+  check("idU")
+    .notEmpty().withMessage("El id de usuario es obligatorio")
+    .isMongoId().withMessage("No es un ID válido de MongoDB")
+    .custom(existeUsuarioPorId),
+  check("idT")
+    .notEmpty().withMessage("El id de la tarea es obligatorio")
+    .isMongoId().withMessage("No es un ID válido de MongoDB")
+    .custom(existeTareaPorId),
+  check("confirmacion")
+    .notEmpty().withMessage("La confirmación es obligatoria")
+    .isBoolean().withMessage("El dato debe ser un booleano"),
+  validarCampos,
+  validarEliminarTarea,
+  validarTareaUsuario,
+], borrarTarea);
 
 
-// :: DELETE - Borrar todas las tareas de un usuario
+
+//:: DELETE - Borrar todas las tareas de un usuario ::
 router.delete("/idUsuario/:idU/todas", [
-  check('idU').notEmpty().withMessage('El id de usuario es obligatorio'),
-  check('idU', 'No es un ID válido de MongoDB').isMongoId(),
-  check('idU').custom(existeUsuarioPorId),
-  check('confirmacion')
-    .notEmpty().withMessage('La confirmación es obligatoria')
-    .isBoolean().withMessage('El dato debe ser un booleano'),
+  validarJWT,
+  check("idU")
+    .notEmpty().withMessage("El id de usuario es obligatorio")
+    .isMongoId().withMessage("No es un ID válido de MongoDB")
+    .custom(existeUsuarioPorId),
+  check("confirmacion")
+    .notEmpty().withMessage("La confirmación es obligatoria")
+    .isBoolean().withMessage("El dato debe ser un booleano"),
   validarCampos,
   validarEliminarTarea,
 ], borrarTareas);

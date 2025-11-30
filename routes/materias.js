@@ -12,33 +12,37 @@ const {
   borrarMateria,
   borrarMaterias,
 } = require("../controllers/materias");
-const { validarMateriaPorUsuario, validarMateriaUsuario, validarEliminarMateria, validarMateriasUsuario } = require("../middlewares/materias");
+
+const {
+  validarMateriaPorUsuario,
+  validarMateriaUsuario,
+  validarEliminarMateria,
+  validarMateriasUsuario,
+  validarHorariosMateria,
+  validarTraslapesHorariosMateria,
+} = require("../middlewares/materias");
 
 const router = Router();
 
-
-
 // ::: POST - Crear materia para un usuario por id :::
-//falta validar horarios cruzados
-router.post("/:id", [
+router.post("/idUsuario/:idU", [
   validarJWT,
-  check('id').notEmpty().withMessage("El id es obligatorio").isMongoId().withMessage("No es un ID válido de MongoDB"),
-  check('id').custom(existeUsuarioPorId),
-  check('nombreMateria', 'El nombre de la materia es obligatorio').not().isEmpty(),
-  check('profesorMateria', 'El nombre del profesor es obligatorio').optional().not().isEmpty(),
-  check('edificioMateria', 'El edificio es obligatorio').optional().not().isEmpty(),
-  check('salonMateria', 'El salón es obligatorio').optional().not().isEmpty(),
-  check('diasMateria', 'Los días de la semana son obligatorios').isArray({ min: 1 }),
-  check('horaInicioMateria', 'La hora de inicio es obligatoria'),
-  check('horaFinMateria', 'La hora de fin es obligatoria'),
+  check("idU")
+    .notEmpty().withMessage("El id del usuario es obligatorio")
+    .isMongoId().withMessage("No es un ID usuario válido de MongoDB")
+    .custom(existeUsuarioPorId),
+  check("nombreMateria")
+    .notEmpty().withMessage("El nombre de la materia es obligatorio"),
+  check("horariosMateria")
+    .isArray({ min: 1 }).withMessage("horariosMateria debe ser un arreglo con al menos un horario"),
   validarCampos,
-  validarMateriaPorUsuario,
+  validarMateriaPorUsuario, // evitar duplicados por usuario
+  validarHorariosMateria,   // validar formato y orden de horarios
+  validarTraslapesHorariosMateria,
 ], crearMateria);
 
-
-
-// :;: GET - Obtener materia por id de la materia :::
-router.get("/:id",[
+// ::: GET - Obtener materia por idMateria :::
+router.get("/:id", [
   validarJWT,
   check('id').notEmpty().withMessage('El id es obligatorio'),
   check('id', 'No es un ID válido de MongoDB').isMongoId(),
@@ -46,10 +50,8 @@ router.get("/:id",[
   validarCampos
 ], obtenerMateria);
 
-
-
 // ::: GET - Obtener todas las materias de un usuario :::
-router.get("/idUsuario/:id",[
+router.get("/idUsuario/:id", [
   validarJWT,
   check('id').notEmpty().withMessage('El id es obligatorio'),
   check('id', 'No es un ID válido de MongoDB').isMongoId(),
@@ -57,11 +59,7 @@ router.get("/idUsuario/:id",[
   validarCampos
 ], obtenerMaterias);
 
-
-
-// ::: PUT - Modificar materia  por id :::
-//--falta validar si son los mismos datos que ya tenia
-//falta validar que si cambia el nombre o horario no se traslape o sea duplicada
+// ::: PUT - Modificar materia por idUsuario + idMateria :::
 router.put("/idUsuario/:idU/idMateria/:idM", [
   validarJWT,
   check('idU').notEmpty().withMessage('El id de usuario es obligatorio'),
@@ -70,20 +68,25 @@ router.put("/idUsuario/:idU/idMateria/:idM", [
   check('idM').notEmpty().withMessage('El id de la materia es obligatorio'),
   check('idM', 'No es un ID válido de MongoDB').isMongoId(),
   check('idM').custom(existeMateriaPorId),
-  check('nombreMateria', 'El nombre de la materia es obligatorio').not().isEmpty(),
-  check('profesorMateria', 'El nombre del profesor es obligatorio').optional().not().isEmpty(),
-  check('edificioMateria', 'El edificio es obligatorio').optional().not().isEmpty(),
-  check('salonMateria', 'El salón es obligatorio').optional().not().isEmpty(),
-  check('diasMateria', 'Los días de la semana son obligatorios').isArray({ min: 3 }),
-  check('horaInicioMateria', 'La hora de inicio es obligatoria').notEmpty(),
-  check('horaFinMateria', 'La hora de fin es obligatoria').notEmpty(),
+  // CAMBIO: actualización parcial
+  check('nombreMateria').optional()
+    .notEmpty().withMessage('El nombre de la materia es obligatorio'),
+  check('profesorMateria').optional()
+    .notEmpty().withMessage('El nombre del profesor es obligatorio'),
+  check('edificioMateria').optional()
+    .notEmpty().withMessage('El edificio es obligatorio'),
+  check('salonMateria').optional()
+    .notEmpty().withMessage('El salón es obligatorio'),
+  // CAMBIO: si viene horariosMateria, debe ser array
+  check('horariosMateria').optional()
+    .isArray({ min: 1 }).withMessage('horariosMateria debe ser un arreglo con al menos un horario'),
   validarCampos,
-  validarMateriaUsuario
+  validarHorariosMateria,  // valida si viene horariosMateria
+  validarMateriaUsuario,
+  validarTraslapesHorariosMateria,
 ], modificarMateria);
 
-
-
-// ::: DELETE - Eliminar una materia de un usurario :::
+// ::: DELETE - Eliminar una materia de un usuario :::
 router.delete("/idUsuario/:idU/idMateria/:idM", [
   validarJWT,
   check('idU').notEmpty().withMessage('El id de usuario es obligatorio'),
@@ -100,9 +103,7 @@ router.delete("/idUsuario/:idU/idMateria/:idM", [
   validarMateriaUsuario,
 ], borrarMateria);
 
-
-
-// Delete - Borrar TODAS las materias de un usuario :::
+// ::: DELETE - Borrar TODAS las materias de un usuario :::
 router.delete("/idUsuario/:idU", [
   validarJWT,
   check('idU').notEmpty().withMessage('El id de usuario es obligatorio'),

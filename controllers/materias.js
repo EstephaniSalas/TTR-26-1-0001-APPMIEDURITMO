@@ -1,44 +1,40 @@
+// controllers/materias.js
 const { response, request } = require("express");
-
 const Materia = require("../models/materia");
 const Usuario = require("../models/usuario");
+
+
 
 // ::: POST - Crear materia :::
 const crearMateria = async (req = request, res = response) => {
   try {
+    const { idU } = req.params;
     const {
       nombreMateria,
-      profesorMateria,
-      edificioMateria,
-      salonMateria,
-      diasMateria,
-      horaInicioMateria,
-      horaFinMateria,
+      profesorMateria = "",
+      edificioMateria = "",
+      salonMateria = "",
+      horariosMateria,
     } = req.body;
-    const { id } = req.params;
 
     const materia = new Materia({
-      usuario: id,
+      usuario: idU,
       nombreMateria,
       profesorMateria,
       edificioMateria,
       salonMateria,
-      diasMateria,
-      horaInicioMateria,
-      horaFinMateria,
+      horariosMateria,
     });
+
     await materia.save();
-    //agregar materia a schema Usuario
+
     await Usuario.findByIdAndUpdate(
-      id,
-      { 
-        $push: { materias: materia._id } 
-      }
+      idU,
+      { $push: { materias: materia._id } },
     );
-    const materiaCreada = await Materia.findById(materia._id).populate(
-      "usuario",
-      "nombre -_id"
-    );
+
+    const materiaCreada = await Materia.findById(materia._id)
+      .populate("usuario", "nombre -_id");
 
     res.status(201).json({
       msg: "Materia creada correctamente",
@@ -53,13 +49,14 @@ const crearMateria = async (req = request, res = response) => {
   }
 };
 
+
+
 const obtenerMateria = async (req = request, res = response) => {
   const { id } = req.params;
   try {
-    const materia = await Materia.findById(id).populate(
-      "usuario",
-      "nombre -_id"
-    );
+    const materia = await Materia.findById(id)
+      .populate("usuario", "nombre -_id");
+
     res.status(200).json({
       materia,
     });
@@ -72,9 +69,11 @@ const obtenerMateria = async (req = request, res = response) => {
   }
 };
 
+
+
 const obtenerMaterias = async (req = request, res = response) => {
-  const { id } = req.params;
-  const { limite = 10, desde = 0 } = req.query; // Parámetros opcionales
+  const { id } = req.params; // id usuario
+  const { limite = 10, desde = 0 } = req.query;
 
   try {
     const [total, materias] = await Promise.all([
@@ -98,6 +97,8 @@ const obtenerMaterias = async (req = request, res = response) => {
   }
 };
 
+
+
 const modificarMateria = async (req = request, res = response) => {
   try {
     const { idM } = req.params;
@@ -106,30 +107,33 @@ const modificarMateria = async (req = request, res = response) => {
       profesorMateria,
       edificioMateria,
       salonMateria,
-      diasMateria,
-      horaInicioMateria,
-      horaFinMateria,
+      horariosMateria,
     } = req.body;
 
-    const datosActualizados = {
-      nombreMateria,
-      profesorMateria,
-      edificioMateria,
-      salonMateria,
-      diasMateria,
-      horaInicioMateria,
-      horaFinMateria
-    };
+    // CAMBIO: update parcial
+    const datosActualizados = {};
+    if (nombreMateria !== undefined) datosActualizados.nombreMateria = nombreMateria;
+    if (profesorMateria !== undefined) datosActualizados.profesorMateria = profesorMateria;
+    if (edificioMateria !== undefined) datosActualizados.edificioMateria = edificioMateria;
+    if (salonMateria !== undefined) datosActualizados.salonMateria = salonMateria;
+    if (horariosMateria !== undefined) datosActualizados.horariosMateria = horariosMateria;
+
+    if (Object.keys(datosActualizados).length === 0) {
+      return res.status(400).json({
+        msg: "No se proporcionaron datos para actualizar",
+      });
+    }
 
     const materiaActualizada = await Materia.findByIdAndUpdate(
       idM,
       datosActualizados,
-      {new: true}
+      { new: true }
     ).populate("usuario", "nombre -_id");
+
     res.status(202).json({
       msg: "Materia modificada exitosamente",
-      materiaActualizada
-    })
+      materiaActualizada,
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({
@@ -139,16 +143,19 @@ const modificarMateria = async (req = request, res = response) => {
   }
 };
 
+
+
+
 const borrarMateria = async (req = request, res = response) => {
   try {
-    const { idM,idU} = req.params;
-    const materia = req.materia;
+    const { idM, idU } = req.params;
+    const materia = req.materia; // seteada en validarMateriaUsuario
+
     const infoMateria = {
       id: materia._id,
       nombre: materia.nombreMateria,
       profesor: materia.profesorMateria,
-      dias: materia.diasMateria,
-      horario: `${materia.horaInicioMateria} - ${materia.horaFinMateria}`
+      horarios: materia.horariosMateria, // CAMBIO
     };
 
     await Materia.findByIdAndDelete(idM);
@@ -156,7 +163,7 @@ const borrarMateria = async (req = request, res = response) => {
 
     res.json({
       msg: "Materia eliminada exitosamente",
-      materiaEliminada: infoMateria 
+      materiaEliminada: infoMateria,
     });
   } catch (error) {
     console.log(error);
@@ -167,16 +174,17 @@ const borrarMateria = async (req = request, res = response) => {
   }
 };
 
+
+
 const borrarMaterias = async (req = request, res = response) => {
   try {
     const { idU } = req.params;
-    const countMaterias = req.cantMat; 
+    const countMaterias = req.cantMat;
 
     const materiasAEliminar = await Materia.find({ usuario: idU })
-      .populate('usuario', 'nombre -_id');
+      .populate("usuario", "nombre -_id");
 
     const resultado = await Materia.deleteMany({ usuario: idU });
-    //aliminar materias del usuario
     await Usuario.findByIdAndUpdate(idU, { materias: [] });
 
     res.status(200).json({
@@ -188,10 +196,10 @@ const borrarMaterias = async (req = request, res = response) => {
         materias: materiasAEliminar.map(m => ({
           nombre: m.nombreMateria,
           profesor: m.profesorMateria,
-          horario: `${m.diasMateria.join(', ')} de ${m.horaInicioMateria} a ${m.horaFinMateria}`,
-          usuario: m.usuario.nombre
-        }))
-      }
+          horarios: m.horariosMateria, // CAMBIO
+          usuario: m.usuario.nombre,
+        })),
+      },
     });
   } catch (error) {
     console.log(error);
@@ -208,5 +216,5 @@ module.exports = {
   obtenerMaterias,
   modificarMateria,
   borrarMateria,
-  borrarMaterias
+  borrarMaterias,
 };

@@ -12,37 +12,33 @@ const TareaSchema = new Schema({
   },
   materiaTarea: {
     type: Schema.Types.ObjectId,
-    ref: "Materia",
-    required: false,
+    ref: "Materia"
   },
-  descripcionMateria: {
+  descripcionTarea: {
     type: String,
-    required: false,
+    default: ""
   },
   tipoTarea: {
-    type: String, //Tarea, Proyecto, Examen
-    required: false,
+    type: String,
+    enum: ["Tarea", "Proyecto", "Examen"],
+    default: "Tarea"
   },
   fechaEntregaTarea: {
-    type: String,
-    required: true,
+    type: Date,
+    required: true
   },
   horaEntregaTarea: {
     type: String,
-    required: true,
-  },
-  prioridadTarea: {
-    type: Boolean,
-    required: false,
+    required: true
   },
   estatusTarea: {
     type: String,
-    enum: ["Pendiente", "Completada"],
-    default: "Pendiente",
-  },
+    enum: ["Pendiente", "Completada", "Vencida"],
+    default: "Pendiente"
+  }
 });
 
-// Método para personalizar el JSON de respuesta
+// Método para personalizar la salida JSON
 TareaSchema.methods.toJSON = function () {
   const { __v, _id, ...tarea } = this.toObject();
   tarea.uid = _id;

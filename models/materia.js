@@ -1,5 +1,23 @@
 const { Schema, model } = require("mongoose");
 
+const HorarioSchema = new Schema({
+  dia: {
+    type: String,
+    enum: ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sábado", "Domingo"],
+    required: true,
+  },
+  horaInicio: {
+    type: String, // "14:00"
+    required: true,
+    trim: true,
+  },
+  horaFin: {
+    type: String, // "16:00"
+    required: true,
+    trim: true,
+  },
+}, { _id: false });
+
 const MateriaSchema = new Schema({
   usuario: {
     type: Schema.Types.ObjectId,
@@ -10,38 +28,36 @@ const MateriaSchema = new Schema({
   nombreMateria: {
     type: String,
     required: true,
+    trim: true,
   },
 
   profesorMateria: {
     type: String,
-    required: false,
+    default: "",
+    trim: true,
   },
 
   edificioMateria: {
     type: String,
-    required: false,
+    default: "",
+    trim: true,
   },
 
   salonMateria: {
     type: String,
-    required: false,
+    default: "",
+    trim: true,
   },
 
-  diasMateria: {
-    type: String,
-    enum: ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"],
+  // reemplaza diasMateria + horaInicioMateria + horaFinMateria
+  horariosMateria: {
+    type: [HorarioSchema],
     required: true,
+    validate: {
+      validator: (v) => Array.isArray(v) && v.length > 0,
+      message: "Debe existir al menos un horario para la materia",
+    },
   },
-
-  horaInicioMateria: {
-    type: String,
-    required: true,
-  },
-
-  horaFinMateria: {
-    type: String,
-    required: true,
-  }
 });
 
 // Método para personalizar el JSON de respuesta
