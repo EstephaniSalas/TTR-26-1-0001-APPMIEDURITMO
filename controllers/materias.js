@@ -37,8 +37,10 @@ const crearMateria = async (req = request, res = response) => {
       .populate("usuario", "nombre -_id");
 
     res.status(201).json({
+      ok: true,
       msg: "Materia creada correctamente",
       materiaCreada,
+      data: materiaCreada,
     });
   } catch (error) {
     console.log(error);
@@ -58,7 +60,9 @@ const obtenerMateria = async (req = request, res = response) => {
       .populate("usuario", "nombre -_id");
 
     res.status(200).json({
+      ok:true,
       materia,
+      data: materia,
     });
   } catch (error) {
     console.log(error);
@@ -85,8 +89,10 @@ const obtenerMaterias = async (req = request, res = response) => {
     ]);
 
     res.status(200).json({
+      ok:true,
       total,
       materias,
+      data:materias,
     });
   } catch (error) {
     console.log(error);
@@ -131,8 +137,10 @@ const modificarMateria = async (req = request, res = response) => {
     ).populate("usuario", "nombre -_id");
 
     res.status(202).json({
+      ok:true,
       msg: "Materia modificada exitosamente",
       materiaActualizada,
+      data:materiaActualizada,
     });
   } catch (error) {
     console.log(error);
@@ -161,9 +169,11 @@ const borrarMateria = async (req = request, res = response) => {
     await Materia.findByIdAndDelete(idM);
     await Usuario.findByIdAndUpdate(idU, { $pull: { materias: idM } });
 
-    res.json({
+    res.status(200),json({
+      ok:true,
       msg: "Materia eliminada exitosamente",
       materiaEliminada: infoMateria,
+      data: infoMateria,
     });
   } catch (error) {
     console.log(error);
@@ -188,6 +198,7 @@ const borrarMaterias = async (req = request, res = response) => {
     await Usuario.findByIdAndUpdate(idU, { materias: [] });
 
     res.status(200).json({
+      ok:true,
       msg: "Todas las materias han sido eliminadas",
       resumen: {
         usuario: idU,

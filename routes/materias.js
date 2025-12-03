@@ -41,14 +41,7 @@ router.post("/idUsuario/:idU", [
   validarTraslapesHorariosMateria,
 ], crearMateria);
 
-// ::: GET - Obtener materia por idMateria :::
-router.get("/:id", [
-  validarJWT,
-  check('id').notEmpty().withMessage('El id es obligatorio'),
-  check('id', 'No es un ID válido de MongoDB').isMongoId(),
-  check('id').custom(existeMateriaPorId),
-  validarCampos
-], obtenerMateria);
+
 
 // ::: GET - Obtener todas las materias de un usuario :::
 router.get("/idUsuario/:id", [
@@ -58,6 +51,18 @@ router.get("/idUsuario/:id", [
   check('id').custom(existeUsuarioPorId),
   validarCampos
 ], obtenerMaterias);
+
+
+
+// ::: GET - Obtener materia por idMateria :::
+router.get("/:id", [
+  validarJWT,
+  check('id').notEmpty().withMessage('El id es obligatorio'),
+  check('id', 'No es un ID válido de MongoDB').isMongoId(),
+  check('id').custom(existeMateriaPorId),
+  validarCampos
+], obtenerMateria);
+
 
 // ::: PUT - Modificar materia por idUsuario + idMateria :::
 router.put("/idUsuario/:idU/idMateria/:idM", [

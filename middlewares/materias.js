@@ -2,7 +2,11 @@ const { request, response } = require("express");
 const Materia = require("../models/materia");
 
 // Verificar que el usuario no tenga ya una materia con el mismo nombre
-const validarMateriaPorUsuario = async (req = request, res = response, next) => {
+const validarMateriaPorUsuario = async (
+  req = request,
+  res = response,
+  next
+) => {
   try {
     const { nombreMateria } = req.body;
     // CAMBIO: soportar tanto /:id como /idUsuario/:idU
@@ -48,7 +52,15 @@ const validarHorariosMateria = (req = request, res = response, next) => {
   }
 
   const regexHora = /^([01]\d|2[0-3]):([0-5]\d)$/;
-  const diasValidos = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  const diasValidos = [
+    "Lunes",
+    "Martes",
+    "Miercoles",
+    "Jueves",
+    "Viernes",
+    "Sábado",
+    "Domingo",
+  ];
 
   for (const [index, h] of horariosMateria.entries()) {
     const { dia, horaInicio, horaFin } = h || {};
@@ -86,16 +98,18 @@ const validarHorariosMateria = (req = request, res = response, next) => {
   next();
 };
 
-
-
 // Evitar traslapes de horarios por usuario
-const validarTraslapesHorariosMateria = async (req = request, res = response, next) => {
+const validarTraslapesHorariosMateria = async (
+  req = request,
+  res = response,
+  next
+) => {
   try {
     const { horariosMateria } = req.body;
     const { idU, id, idM } = req.params;
     const usuarioId = idU || id;
 
-    // Si no viene horariosMateria (p.ej. PUT parcial sin horarios), no validamos
+    // Si no viene horariosMateria
     if (!Array.isArray(horariosMateria) || horariosMateria.length === 0) {
       return next();
     }
@@ -131,8 +145,9 @@ const validarTraslapesHorariosMateria = async (req = request, res = response, ne
 
         if (actual.inicioMin < prev.finMin) {
           return res.status(400).json({
-            msg: `Traslape de horarios en '${dia}' dentro de la misma materia: ` +
-                 `bloque ${prev.horaInicio}-${prev.horaFin} y bloque ${actual.horaInicio}-${actual.horaFin}`,
+            msg:
+              `Traslape de horarios en '${dia}' dentro de la misma materia: ` +
+              `bloque ${prev.horaInicio}-${prev.horaFin} y bloque ${actual.horaInicio}-${actual.horaFin}`,
           });
         }
       }
@@ -167,10 +182,7 @@ const validarTraslapesHorariosMateria = async (req = request, res = response, ne
           // Condición de traslape: [iniNuevo, finNuevo) intersecta [iniExist, finExist)
           if (iniNuevo < finExist && finNuevo > iniExist) {
             return res.status(400).json({
-              msg:
-                `El horario ${diaNuevo} ${nuevo.horaInicio}-${nuevo.horaFin} ` +
-                `se traslapa con la materia '${mat.nombreMateria}' ` +
-                `(${diaNuevo} ${hExist.horaInicio}-${hExist.horaFin})`,
+              msg: `El horario ${diaNuevo} ${nuevo.horaInicio}-${nuevo.horaFin} se traslapa con la materia '${mat.nombreMateria}' (${diaNuevo} ${hExist.horaInicio}-${hExist.horaFin})`,
             });
           }
         }
@@ -185,7 +197,6 @@ const validarTraslapesHorariosMateria = async (req = request, res = response, ne
     });
   }
 };
-
 
 const validarMateriaUsuario = async (req = request, res = response, next) => {
   const { idU, idM } = req.params;
