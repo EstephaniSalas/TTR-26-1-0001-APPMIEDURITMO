@@ -6,37 +6,33 @@ const bcrypt = require("bcryptjs");
 // :::::: LOGIN USUARIO - POST ::::::
 const loginUsuario = async (req, res = response) => {
   const { correo, password } = req.body;
-    try {
-        const usuario = await Usuario.findOne({ correo });
-        if(!usuario.estado){
-            return res.status(400).json({
-                msg: 'El correo/contraseña son incorrectos - estado: false'
-            });
-        }
-        const passValida = bcrypt.compareSync(password, usuario.password);
-        if (!passValida) {
-            return res.status(400).json({
-                msg: 'El correo/contraseña son incorrectos - password'
-            });
-        }
-        const token = await generarJWT(usuario.id);
-        res.cookie('token', token, {
-            httpOnly: true,
-            sameSite: 'Strict',
-            secure: process.env.NODE_ENV === 'production',  // Solo se establece 'secure' en producción
-            maxAge: 60 * 60 * 24 * 2 *1000,  // 1 dia de expiración
-        });
-        res.json({
-            msg: 'inicio de sesión exitoso',
-            usuario,
-        });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            msg: 'Error el intentar iniciar sesión'
-        });
+  try {
+    const usuario = await Usuario.findOne({ correo });
+    if (!usuario || !usuario.estado) {
+      return res.status(400).json({
+        msg: "Correo o contraseña incorrectos",
+      });
     }
+    const passValida = bcrypt.compareSync(password, usuario.password);
+    if (!passValida) {
+      return res.status(400).json({
+        msg: "Correo o contraseña incorrectos",
+      });
+    }
+    const token = await generarJWT(usuario.id);
+    return res.json({
+      msg: "Inicio de sesión exitoso",
+      usuario,
+      token,               // ← AQUÍ se regresa el JWT
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      msg: "Error al intentar iniciar sesión",
+    });
+  }
 };
+
 
 const verificarJWT = (req = request, res = response) => {
   res.json({
@@ -51,5 +47,4 @@ const cerrarSesion = (req = request, res = response) => {
 module.exports = {
   loginUsuario,
   verificarJWT,
-  cerrarSesion,
 };

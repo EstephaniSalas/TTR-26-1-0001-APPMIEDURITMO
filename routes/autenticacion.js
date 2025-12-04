@@ -5,6 +5,7 @@ const { validarCampos } = require("../middlewares/validar-campos");
 
 const { loginUsuario, verificarJWT, cerrarSesion } = require("../controllers/autenticacion");
 const { validarUsuarioLogin, validarPasswordLogin } = require("../middlewares/autenticacion");
+const { validarJWT } = require("../middlewares/validar-jwt");
 
 const router = Router();
 
@@ -21,9 +22,9 @@ router.post("/login", [
 ], loginUsuario);
 
 // Simple endpoint para probar/verificar un token
-router.get("/verificarJWT", verificarJWT);
+router.get("/verificarJWT",[
+  validarJWT,
+], verificarJWT);
 
-// Endpoint "dummy" para cerrar sesión (lado servidor no invalida JWT, solo a nivel cliente)
-router.post("/cerrarSesion", cerrarSesion);
 
 module.exports = router;

@@ -78,7 +78,7 @@ const obtenerTareas = async (req = request, res = response) => {
   try {
     const { idU } = req.params;
 
-    const tareas = await Tarea.find({ usuario: idU })
+    const tareas = await Tarea.find({ usuario: idU , estatusTarea: "Pendiente"},)
       .populate("materiaTarea", "nombreMateria -_id")
       .sort({ fechaEntregaTarea: 1, horaEntregaTarea: 1 });
 

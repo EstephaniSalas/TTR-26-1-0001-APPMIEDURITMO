@@ -76,12 +76,9 @@ router.put("/idUsuario/:idU/idMateria/:idM", [
   // CAMBIO: actualización parcial
   check('nombreMateria').optional()
     .notEmpty().withMessage('El nombre de la materia es obligatorio'),
-  check('profesorMateria').optional()
-    .notEmpty().withMessage('El nombre del profesor es obligatorio'),
-  check('edificioMateria').optional()
-    .notEmpty().withMessage('El edificio es obligatorio'),
-  check('salonMateria').optional()
-    .notEmpty().withMessage('El salón es obligatorio'),
+  check('profesorMateria').optional(),
+  check('edificioMateria').optional(),
+  check('salonMateria').optional(),
   // CAMBIO: si viene horariosMateria, debe ser array
   check('horariosMateria').optional()
     .isArray({ min: 1 }).withMessage('horariosMateria debe ser un arreglo con al menos un horario'),

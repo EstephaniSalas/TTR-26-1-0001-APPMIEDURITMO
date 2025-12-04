@@ -77,7 +77,7 @@ const obtenerMateria = async (req = request, res = response) => {
 
 const obtenerMaterias = async (req = request, res = response) => {
   const { id } = req.params; // id usuario
-  const { limite = 10, desde = 0 } = req.query;
+  const { limite = 20, desde = 0 } = req.query;
 
   try {
     const [total, materias] = await Promise.all([
@@ -169,7 +169,7 @@ const borrarMateria = async (req = request, res = response) => {
     await Materia.findByIdAndDelete(idM);
     await Usuario.findByIdAndUpdate(idU, { $pull: { materias: idM } });
 
-    res.status(200),json({
+    res.status(200).json({
       ok:true,
       msg: "Materia eliminada exitosamente",
       materiaEliminada: infoMateria,

@@ -24,6 +24,8 @@ const {
   validarHoraEntrega24,
   validarHoraEntrega24Opcional,
   validarCamposTareaUpdate,
+  validarFechaHoraTarea,
+  validarFechaHoraTareaOpcional,
 } = require("../middlewares/tareas");
 const { validarJWT } = require("../middlewares/validar-jwt");
 
@@ -49,8 +51,7 @@ router.post("/idUsuario/:idU", [
     .withMessage("Tipo de tarea inválido"),
   check("fechaEntregaTarea")
     .notEmpty().withMessage("La fecha de entrega es obligatoria")
-    .isISO8601().withMessage("La fecha debe tener formato válido (YYYY-MM-DD)")
-    .toDate(),
+    .isISO8601().withMessage("La fecha debe tener formato válido (YYYY-MM-DD)"),
   check("horaEntregaTarea")
     .notEmpty().withMessage("La hora de entrega es obligatoria"),
   check("descripcionTarea")
@@ -61,7 +62,8 @@ router.post("/idUsuario/:idU", [
     .isIn(["Pendiente", "Completada"])
     .withMessage("Estatus inválido"),
   validarCampos,
-  validarHoraEntrega24, // valida formato HH:MM y rango
+  validarFechaHoraTarea,
+  validarHoraEntrega24, // valida formato HH:MM y rango y que la fecha no sea anterior a la actual
 ], crearTarea);
 
 
@@ -115,8 +117,7 @@ router.put("/idUsuario/:idU/idTarea/:idT", [
     .isIn(["Tarea", "Proyecto", "Examen"])
     .withMessage("Tipo de tarea inválido"),
   check("fechaEntregaTarea").optional()
-    .isISO8601().withMessage("La fecha debe tener formato válido (YYYY-MM-DD)")
-    .toDate(),
+    .isISO8601().withMessage("La fecha debe tener formato válido (YYYY-MM-DD)"),
   check("horaEntregaTarea").optional()
     .notEmpty().withMessage("La hora de entrega no puede ir vacía"),
   check("descripcionTarea").optional()
@@ -127,6 +128,7 @@ router.put("/idUsuario/:idU/idTarea/:idT", [
   validarCampos,
   validarTareaUsuario,
   validarCamposTareaUpdate,     // al menos un campo
+  validarFechaHoraTareaOpcional,
   validarHoraEntrega24Opcional, // valida hora si viene
 ], actualizarTarea);
 

@@ -79,7 +79,8 @@ router.post("/validarCodigo", [
   check('correo')
     .notEmpty().withMessage("el campo no puede estar vacio")
     .isEmail().withMessage("No es un correo"),
-  check('codigo', 'El codigo es obligatorio').not().isEmpty(),
+  check('codigo', 'El codigo es obligatorio').not().isEmpty()
+    .isLength({max:6}).withMessage("El codigo es de solo 6 digitos"),
   validarCampos
 ], validarCodigo);
 

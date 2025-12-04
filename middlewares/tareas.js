@@ -1,7 +1,25 @@
 const { request, response } = require("express");
 const Tarea = require("../models/tarea");
 
+/* ===========================
+   Helper interno
+   =========================== */
+function normalizarFecha(fechaEntregaTarea) {
+  // Si ya es Date (por .toDate()), la pasamos a YYYY-MM-DD
+  if (fechaEntregaTarea instanceof Date) {
+    const year = fechaEntregaTarea.getFullYear();
+    const month = String(fechaEntregaTarea.getMonth() + 1).padStart(2, "0");
+    const day = String(fechaEntregaTarea.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+  // Si viene como string "YYYY-MM-DD", lo regresamos tal cual
+  return fechaEntregaTarea;
+}
 
+
+/* ===========================
+   Middlewares
+   =========================== */
 
 // Verifica que la tarea pertenezca al usuario
 const validarTareaUsuario = async (req = request, res = response, next) => {
@@ -16,7 +34,7 @@ const validarTareaUsuario = async (req = request, res = response, next) => {
       });
     }
 
-    req.tarea = tarea; // se usa en los controladores
+    req.tarea = tarea;
     next();
   } catch (error) {
     console.error("Error en validarTareaUsuario:", error);
@@ -26,7 +44,6 @@ const validarTareaUsuario = async (req = request, res = response, next) => {
     });
   }
 };
-
 
 
 // Confirmación para borrar (una o todas)
@@ -48,8 +65,6 @@ const validarEliminarTarea = (req = request, res = response, next) => {
     });
   }
 };
-
-
 
 
 // Validar horaEntregaTarea en formato 24h obligatorio (para crear)
@@ -83,8 +98,6 @@ const validarHoraEntrega24 = (req = request, res = response, next) => {
 };
 
 
-
-
 // Versión opcional para PUT: solo valida si viene
 const validarHoraEntrega24Opcional = (req = request, res = response, next) => {
   let { horaEntregaTarea } = req.body;
@@ -112,8 +125,6 @@ const validarHoraEntrega24Opcional = (req = request, res = response, next) => {
   req.body.horaEntregaTarea = horaEntregaTarea;
   next();
 };
-
-
 
 
 // Forzar que en el PUT venga al menos un campo para actualizar
@@ -147,10 +158,130 @@ const validarCamposTareaUpdate = (req = request, res = response, next) => {
   next();
 };
 
+
+/* ============================================================
+   VALIDAR FECHA + HORA (POST) — usando normalizarFecha
+   ============================================================ */
+const validarFechaHoraTarea = (req = request, res = response, next) => {
+  try {
+    let { fechaEntregaTarea, horaEntregaTarea } = req.body;
+
+    if (!fechaEntregaTarea || !horaEntregaTarea) {
+      return res.status(400).json({
+        msg: "La fecha y hora de entrega son obligatorias"
+      });
+    }
+
+    const fechaNormal = normalizarFecha(fechaEntregaTarea);
+
+    const [hh, mm] = horaEntregaTarea.split(":").map(Number);
+
+    if (
+      isNaN(hh) || isNaN(mm) ||
+      hh < 0 || hh > 23 ||
+      mm < 0 || mm > 59
+    ) {
+      return res.status(400).json({
+        msg: "La hora de entrega debe tener formato válido HH:MM"
+      });
+    }
+
+    const fecha = new Date(`${fechaNormal}T${horaEntregaTarea}:00`);
+
+    if (isNaN(fecha.getTime())) {
+      return res.status(400).json({
+        msg: "Fecha de entrega inválida"
+      });
+    }
+
+    const ahora = new Date();
+
+    if (fecha <= ahora) {
+      return res.status(400).json({
+        msg: "No puedes registrar tareas con fecha u hora pasada"
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error("Error en validarFechaHoraTarea:", error);
+    return res.status(500).json({
+      msg: "Error interno al validar fecha/hora de la tarea"
+    });
+  }
+};
+
+
+/* ============================================================
+   VALIDAR FECHA + HORA (PUT) — opcional
+   ============================================================ */
+const validarFechaHoraTareaOpcional = (req = request, res = response, next) => {
+  try {
+    let { fechaEntregaTarea, horaEntregaTarea } = req.body;
+
+    // Si no vienen, no validamos nada
+    if (!fechaEntregaTarea && !horaEntregaTarea) {
+      return next();
+    }
+
+    // Si viene uno pero no el otro → error
+    if (fechaEntregaTarea && !horaEntregaTarea) {
+      return res.status(400).json({
+        msg: "Si actualizas la fecha de entrega, debes enviar también la horaEntregaTarea",
+      });
+    }
+
+    if (!fechaEntregaTarea && horaEntregaTarea) {
+      return res.status(400).json({
+        msg: "Si actualizas la hora de entrega, debes enviar también la fechaEntregaTarea",
+      });
+    }
+
+    const fechaNormal = normalizarFecha(fechaEntregaTarea);
+
+    const [hh, mm] = horaEntregaTarea.split(":").map(Number);
+    if (
+      isNaN(hh) || isNaN(mm) ||
+      hh < 0 || hh > 23 ||
+      mm < 0 || mm > 59
+    ) {
+      return res.status(400).json({
+        msg: "La hora de entrega debe tener formato válido HH:MM"
+      });
+    }
+
+    const fecha = new Date(`${fechaNormal}T${horaEntregaTarea}:00`);
+
+    if (isNaN(fecha.getTime())) {
+      return res.status(400).json({
+        msg: "Fecha de entrega inválida"
+      });
+    }
+
+    const ahora = new Date();
+
+    if (fecha <= ahora) {
+      return res.status(400).json({
+        msg: "No puedes actualizar la tarea a una fecha u hora pasada respecto a la actual"
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error("Error en validarFechaHoraTareaOpcional:", error);
+    return res.status(500).json({
+      msg: "Error interno al validar fecha/hora de tarea (opcional)"
+    });
+  }
+};
+
+
 module.exports = {
   validarTareaUsuario,
   validarEliminarTarea,
   validarHoraEntrega24,
   validarHoraEntrega24Opcional,
   validarCamposTareaUpdate,
+  validarFechaHoraTarea,
+  validarFechaHoraTareaOpcional,
 };
