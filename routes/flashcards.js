@@ -3,8 +3,8 @@ const { check } =  require("express-validator");
 const { validarCampos } = require("../middlewares/validar-campos");
 const { validarJWT } = require("../middlewares/validar-jwt");
 
-const { crearFlashcard, obtenerFlashcard, obtenerFlashcardsPorMateria,
-        borrarFlashcard, modificarFlascard, 
+const { crearFlashcard, obtenerFlashcard, obtenerFlashcardsPorMateria, obtenerMateriasConFlashcards,
+        borrarFlashcard, modificarFlascard, borrarFlashcardsPorMateria,
         borrarFlashcards} = require("../controllers/flashcards");
 const {existeUsuarioPorId, existeFlashcardPorId, existeMateriaPorId} = require("../helpers/db-validators");
 const {validarMateriaUsuario} = require("../middlewares/materias")
@@ -58,6 +58,18 @@ router.get("/idUsuario/:idU/idMateria/:idM", [
 
 
 
+// :: GET - Obtener materias que tienen al menos una flashcard para el usuario
+router.get("/materias/idUsuario/:idU", [
+  validarJWT,
+  check("idU")
+    .notEmpty().withMessage("El id del usuario es obligatorio")
+    .isMongoId().withMessage("No es un ID usuario válido de MongoDB")
+    .custom(existeUsuarioPorId),
+  validarCampos,
+], obtenerMateriasConFlashcards);
+
+
+
 // :: Put - Modificar flashcard por usuario y materia 
 router.put("/idUsuario/:idU/idFlashcard/:idF",[
     validarJWT,
@@ -75,7 +87,7 @@ router.put("/idUsuario/:idU/idFlashcard/:idF",[
 
 
 
-// :: Delete - Borrar flashcard por usuario y materia
+// :: Delete - Borrar flashcard por usuario
 router.delete("/idUsuario/:idU/idFlashcard/:idF",[
     validarJWT,
     check("idU").notEmpty().withMessage("El id del usuario es obligatorio")
@@ -89,6 +101,27 @@ router.delete("/idUsuario/:idU/idFlashcard/:idF",[
     validarFlashcardUsuario,
     validarEliminarFlashcards,
 ], borrarFlashcard ); 
+
+
+// borrar flashcard por seccion materia.
+router.delete("/idUsuario/:idU/idMateria/:idM", [
+  validarJWT,
+  check("idU")
+    .notEmpty().withMessage("El id del usuario es obligatorio")
+    .isMongoId().withMessage("No es un ID usuario válido de MongoDB")
+    .custom(existeUsuarioPorId),
+  check("idM")
+    .notEmpty().withMessage("El id de la materia es obligatorio")
+    .isMongoId().withMessage("No es un ID materia válido de MongoDB")
+    .custom(existeMateriaPorId),
+  check("confirmacion")
+    .notEmpty().withMessage("La confirmación es obligatoria")
+    .isBoolean().withMessage("La confirmación debe ser un booleano"),
+  validarCampos,
+  validarMateriaUsuario,
+  validarEliminarFlashcards,
+], borrarFlashcardsPorMateria);
+
 
 
 

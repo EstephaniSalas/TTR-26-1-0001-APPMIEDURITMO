@@ -125,6 +125,49 @@ const borrarFlashcard = async (req = request, res = response) => {
   }
 };
 
+
+
+// Borrar todas las flashcard por seccion materia
+const borrarFlashcardsPorMateria = async (req = request, res = response) => {
+  try {
+    const { idU, idM } = req.params;
+
+    const flashcardsMateria = await Flashcard.find({
+      usuario: idU,
+      materia: idM,
+    }).select("_id");
+
+    if (flashcardsMateria.length === 0) {
+      return res.status(404).json({
+        msg: "El usuario no tiene flashcards para esa materia",
+        totalFlashcards: 0,
+      });
+    }
+
+    const resultado = await Flashcard.deleteMany({
+      usuario: idU,
+      materia: idM,
+    });
+
+    await Usuario.findByIdAndUpdate(idU, {
+      $pull: { flashcards: { $in: flashcardsMateria.map(f => f._id) } },
+    });
+
+    res.json({
+      msg: "Todas las flashcards de la materia han sido eliminadas",
+      totalEliminadas: resultado.deletedCount,
+    });
+  } catch (error) {
+    console.log("Error en borrarFlashcardsPorMateria:", error);
+    res.status(500).json({
+      msg: "Error interno del servidor - borrarFlashcardsPorMateria",
+      error: error.message,
+    });
+  }
+};
+
+
+
 const borrarFlashcards = async (req = request, res = response) => {
   try {
     const { idU } = req.params;
@@ -150,11 +193,51 @@ const borrarFlashcards = async (req = request, res = response) => {
   }
 };
 
+// Obtener materias que tienen al menos una flashcard para un usuario
+const obtenerMateriasConFlashcards = async (req = request, res = response) => {
+  try {
+    const { idU } = req.params;
+
+    // 1) IDs de materias que tienen flashcards de este usuario
+    const materiasIds = await Flashcard.distinct('materia', {
+      usuario: idU,
+    });
+
+    if (!materiasIds || materiasIds.length === 0) {
+      return res.json({
+        ok: true,
+        materias: [],
+      });
+    }
+
+    // 2) Traer la info de esas materias
+    const materias = await Materia.find({
+      _id: { $in: materiasIds },
+      // si manejas campo "usuario" en Materia, puedes filtrarlo también:
+      // usuario: idU,
+    }).lean();
+
+    return res.json({
+      ok: true,
+      materias,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      ok: false,
+      msg: 'Error al obtener materias con flashcards',
+    });
+  }
+};
+
+
 module.exports = {
   crearFlashcard,
   obtenerFlashcard,
   obtenerFlashcardsPorMateria,
+  obtenerMateriasConFlashcards,
   modificarFlascard,
   borrarFlashcard,
+  borrarFlashcardsPorMateria,
   borrarFlashcards,
 };
