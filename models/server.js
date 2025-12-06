@@ -16,6 +16,7 @@ class Server {
       notas: "/api/notas",
       flashcards: "/api/flashcards",
       autenticacion: "/api/autenticacion",
+      sesionesEstudio: "/api/sesiones-estudio",
     };
     
     //Conectar a base de datos
@@ -66,6 +67,8 @@ class Server {
     this.app.use(this.paths.tareas, require("../routes/tareas"));
     this.app.use(this.paths.usuarios, require("../routes/usuarios"));
     this.app.use(this.paths.autenticacion, require("../routes/autenticacion"));
+    this.app.use(this.paths.sesionesEstudio, require("../routes/sesionEstudio"));
+
   }
   // Middleware para rutas no encontradas (cubre cualquier método)
   notFound() {
