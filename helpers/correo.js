@@ -7,46 +7,52 @@ const enviarCorreo = async (correoUsuario, nombre, codigo) => {
     try {
         console.log('=== ENVIANDO CON SENDGRID ===');
         console.log('Destinatario:', correoUsuario);
-        console.log('Nombre:', nombre);
-        console.log('Código:', codigo);
-        console.log('API Key configurada:', process.env.SENDGRID_API_KEY ? 'Sí' : 'No');
+        console.log('Es Outlook/Hotmail?:', correoUsuario.includes('@outlook') || correoUsuario.includes('@hotmail'));
         
         const msg = {
             to: correoUsuario,
             from: {
-                email: process.env.CORREOMIEDURITMO || 'estephani.saor@gmail.com',
+                email: 'estephani.saor@gmail.com',
                 name: 'Mi EduRitmo'
             },
+            replyTo: 'estephani.saor@gmail.com', // IMPORTANTE para Outlook
             subject: 'Código de verificación para cambiar contraseña',
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #333;">Hola ${nombre},</h2>
-                <p>Has solicitado cambiar tu contraseña. Usa el siguiente código para verificar:</p>
-                <div style="background-color: #f4f4f4; padding: 15px; text-align: center; margin: 20px 0;">
-                    <h1 style="color: #007bff; margin: 0; font-size: 32px;">${codigo}</h1>
-                </div>
-                <p>Este código expirará en 15 minutos.</p>
-                <p>Si no solicitaste este cambio, por favor ignora este correo.</p>
-                <br>
-                <p>Saludos,<br>El equipo de Mi EduRitmo</p>
-                </div>
-            `,
-            text: `Hola ${nombre},\n\nTu código de verificación es: ${codigo}\n\nEste código expirará en 15 minutos.\n\nSaludos,\nEl equipo de Mi EduRitmo`
+            html: `...tu HTML...`,
+            text: `...tu texto...`,
+            // Configuraciones importantes para deliverability
+            mailSettings: {
+                sandboxMode: {
+                    enable: false // Asegúrate que esté en false
+                }
+            },
+            // Categoría para tracking (opcional)
+            categories: ['password-reset', 'verification'],
+            // Headers personalizados
+            headers: {
+                'X-Priority': '1',
+                'X-MSMail-Priority': 'High',
+                'Importance': 'High'
+            },
+            // Configuración de click tracking (deshabilitar puede ayudar)
+            trackingSettings: {
+                clickTracking: {
+                    enable: false
+                },
+                openTracking: {
+                    enable: false
+                }
+            }
         };
 
         const response = await sgMail.send(msg);
         console.log('✅ Correo enviado con SendGrid');
         console.log('Status Code:', response[0].statusCode);
-        console.log('Headers:', response[0].headers);
+        console.log('Message ID:', response[0].headers['x-message-id']);
         
         return response;
     } catch (error) {
-        console.error('❌ ERROR SENDGRID:');
-        console.error('Mensaje:', error.message);
-        if (error.response) {
-            console.error('Respuesta error:', error.response.body);
-        }
-        throw new Error('No se pudo enviar el correo de verificación');
+        console.error('❌ ERROR SENDGRID:', error.message);
+        throw error;
     }
 };
 
