@@ -17,6 +17,7 @@ class Server {
       flashcards: "/api/flashcards",
       autenticacion: "/api/autenticacion",
       sesionesEstudio: "/api/sesiones-estudio",
+      calendarioSep: "/api/calendario-sep",
     };
     
     //Conectar a base de datos
@@ -68,6 +69,7 @@ class Server {
     this.app.use(this.paths.usuarios, require("../routes/usuarios"));
     this.app.use(this.paths.autenticacion, require("../routes/autenticacion"));
     this.app.use(this.paths.sesionesEstudio, require("../routes/sesionEstudio"));
+    this.app.use(this.paths.calendarioSep, require("../routes/calendarioSep")); 
 
   }
   // Middleware para rutas no encontradas (cubre cualquier método)
