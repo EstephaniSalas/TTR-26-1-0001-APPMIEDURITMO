@@ -1,44 +1,33 @@
-// models/calendarioSep.js
 const { Schema, model } = require("mongoose");
 
-/**
- * Calendario SEP oficial (ciclo escolar).
- *
- * Ejemplo de documento:
- * {
- *   ciclo: "2024-2025",
- *   fecha: 2024-09-16T00:00:00.000Z,
- *   tipo: "SUSPENSION",
- *   descripcion: "Suspensión por Independencia de México",
- *   esNoLaborable: true
- * }
- */
 const CalendarioSepSchema = new Schema(
   {
     ciclo: {
       type: String,
-      required: true,
-      trim: true,
+      required: true,        // Ej: "2025-2026"
+      index: true,
     },
     fecha: {
       type: Date,
       required: true,
+      index: true,
     },
     tipo: {
       type: String,
-      enum: ["CLASES", "SUSPENSION", "VACACIONES", "PERIODO_EVALUACION", "OTRO"],
       required: true,
-      uppercase: true,
-      trim: true,
+      enum: [
+        "DIA_FESTIVO",
+        "SUSPENSION_CLASES",
+        "VACACIONES",
+      ],
     },
     descripcion: {
       type: String,
-      default: "",
-      trim: true,
+      required: true,
     },
-    // Para marcar si ese día no hay clases (útil en Flutter)
-    esNoLaborable: {
+    esHabil: {
       type: Boolean,
+      required: true,
       default: false,
     },
   },
@@ -47,10 +36,15 @@ const CalendarioSepSchema = new Schema(
   }
 );
 
+CalendarioSepSchema.index(
+  { ciclo: 1, fecha: 1 },
+  { unique: true }
+);
+
 CalendarioSepSchema.methods.toJSON = function () {
-  const { __v, _id, ...cal } = this.toObject();
-  cal.uid = _id;
-  return cal;
+  const { __v, _id, ...evento } = this.toObject();
+  evento.uid = _id;
+  return evento;
 };
 
 module.exports = model("CalendarioSep", CalendarioSepSchema);
