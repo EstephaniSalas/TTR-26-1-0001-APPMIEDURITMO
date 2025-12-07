@@ -7,17 +7,40 @@ const enviarCorreo = async (correoUsuario, nombre, codigo) => {
     try {
         console.log('=== ENVIANDO CON SENDGRID ===');
         console.log('Destinatario:', correoUsuario);
-        console.log('Nombre:', nombre);
-        console.log('Código:', codigo);
-        console.log('Es Outlook/Hotmail?:', correoUsuario.includes('@outlook') || correoUsuario.includes('@hotmail'));
+        
+        // DETECTAR PROVEEDOR DE EMAIL
+        const esMicrosoft = correoUsuario.toLowerCase().includes('@outlook') || 
+                           correoUsuario.toLowerCase().includes('@hotmail') ||
+                           correoUsuario.toLowerCase().includes('@live');
+        
+        // CONFIGURACIÓN ESPECÍFICA PARA MICROSOFT
+        let configEmail;
+        if (esMicrosoft) {
+            console.log('📧 Usando configuración especial para Microsoft...');
+            configEmail = {
+                fromEmail: 'noreply@sendgrid.me',  // Dominio autenticado de SendGrid
+                fromName: 'Mi EduRitmo',
+                replyTo: 'soporte@sendgrid.me',
+                priority: 'high',
+                tracking: false
+            };
+        } else {
+            configEmail = {
+                fromEmail: 'estephani.saor@gmail.com',
+                fromName: 'Mi EduRitmo',
+                replyTo: 'estephani.saor@gmail.com',
+                priority: 'normal',
+                tracking: true
+            };
+        }
         
         const msg = {
             to: correoUsuario,
             from: {
-                email: 'estephani.saor@gmail.com',
-                name: 'Mi EduRitmo'
+                email: configEmail.fromEmail,
+                name: configEmail.fromName
             },
-            replyTo: 'estephani.saor@gmail.com',
+            replyTo: configEmail.replyTo,
             subject: 'Código de verificación para cambiar contraseña',
             html: `
                 <!DOCTYPE html>
@@ -197,77 +220,42 @@ El equipo de Mi EduRitmo
 Este es un correo automático, por favor no responder directamente.
 Si necesitas asistencia, contáctanos a través de la aplicación.`,
             
-            // Configuraciones importantes para deliverability
-            mailSettings: {
-                sandboxMode: {
-                    enable: false
-                }
-            },
-            
-            // Categoría para tracking
-            categories: ['password-reset', 'verification'],
-            
-            // Headers personalizados
-            headers: {
+            // CONFIGURACIÓN ESPECIAL PARA MICROSOFT
+            headers: esMicrosoft ? {
                 'X-Priority': '1',
                 'X-MSMail-Priority': 'High',
                 'Importance': 'High',
-                'X-Mailer': 'Mi EduRitmo Mail System'
+                'X-Mailer': 'Mi EduRitmo',
+                'Precedence': 'bulk'
+            } : {},
+            
+            mailSettings: {
+                sandboxMode: { enable: false }
             },
             
-            // Configuración de tracking
             trackingSettings: {
-                clickTracking: {
-                    enable: false
-                },
-                openTracking: {
-                    enable: false
-                },
-                subscriptionTracking: {
-                    enable: false
-                }
-            },
-            
-            // Prioridad del email
-            priority: 'high'
+                clickTracking: { enable: configEmail.tracking },
+                openTracking: { enable: configEmail.tracking }
+            }
         };
 
-        // Pequeño delay para evitar rate limiting (especialmente con Outlook/Hotmail)
-        if (correoUsuario.includes('@outlook') || correoUsuario.includes('@hotmail')) {
-            console.log('⏳ Aplicando delay para Microsoft...');
-            await new Promise(resolve => setTimeout(resolve, 2000));
+        // DELAY MÁS LARGO PARA MICROSOFT
+        if (esMicrosoft) {
+            console.log('⏳ Aplicando delay de 3 segundos para Microsoft...');
+            await new Promise(resolve => setTimeout(resolve, 3000));
         }
 
-        console.log('🚀 Enviando correo...');
+        console.log(`🚀 Enviando con remitente: ${configEmail.fromEmail}`);
         const response = await sgMail.send(msg);
         
         console.log('✅ Correo enviado con SendGrid');
-        console.log('Status Code:', response[0].statusCode);
         console.log('Message ID:', response[0].headers['x-message-id']);
-        console.log('Headers:', Object.keys(response[0].headers).join(', '));
         
         return response;
     } catch (error) {
-        console.error('❌ ERROR SENDGRID DETALLADO:');
-        console.error('Mensaje:', error.message);
-        
-        if (error.response) {
-            console.error('Status Code:', error.response.statusCode);
-            console.error('Body:', error.response.body);
-            console.error('Headers:', error.response.headers);
-        }
-        
-        // Errores específicos
-        if (error.code === 'EAUTH') {
-            throw new Error('Error de autenticación. Verifica la configuración del correo.');
-        } else if (error.code === 'ECONNECTION') {
-            throw new Error('Error de conexión. Verifica tu internet e intenta nuevamente.');
-        } else if (error.message.includes('Unauthorized')) {
-            throw new Error('API Key incorrecta. Verifica las credenciales en Railway.');
-        } else {
-            throw new Error('No se pudo enviar el correo de verificación. Por favor intenta más tarde.');
-        }
-    }   
+        console.error('❌ ERROR:', error.message);
+        throw error;
+    }
 };
 
 const generarCodigoVerificacion = () => {
