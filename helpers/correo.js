@@ -1,50 +1,36 @@
 // correo.js - VERSIÓN CORRECTA
-const emailjs = require('emailjs-com');
+// correo.js - VERSIÓN PARA NODE.JS
+const EmailJS = require('@emailjs/nodejs');
 
-// Función para enviar correo con EmailJS
 const enviarCorreo = async (correoUsuario, nombre, codigo) => {
     try {
-        console.log('📧 Enviando con EmailJS...');
-        console.log('Destinatario:', correoUsuario);
-        console.log('Nombre:', nombre);
-        console.log('Código:', codigo);
+        console.log('📧 Enviando con EmailJS Node.js...');
         
-        const templateParams = {
-            to_email: correoUsuario,
-            to_name: nombre,
-            from_name: 'Mi EduRitmo',
-            codigo: codigo,
-            nombre: nombre
-        };
+        // Inicializar con tu Public Key
+        EmailJS.init({
+            publicKey: process.env.EMAILJS_PUBLIC_KEY,
+            privateKey: process.env.EMAILJS_PRIVATE_KEY  // Opcional, para templates privados
+        });
         
-        console.log('🔑 Service ID:', process.env.EMAILJS_SERVICE_ID ? 'Configurado' : 'NO configurado');
-        console.log('🔑 Template ID:', process.env.EMAILJS_TEMPLATE_ID ? 'Configurado' : 'NO configurado');
-        
-        const response = await emailjs.send(
+        const response = await EmailJS.send(
             process.env.EMAILJS_SERVICE_ID,
             process.env.EMAILJS_TEMPLATE_ID,
-            templateParams,
-            process.env.EMAILJS_PUBLIC_KEY
+            {
+                to_email: correoUsuario,
+                to_name: nombre,
+                from_name: 'Mi EduRitmo',
+                codigo: codigo,
+                nombre: nombre
+            }
         );
         
         console.log('✅ Correo enviado con EmailJS');
-        console.log('Status:', response.status);
-        console.log('Text:', response.text);
-        
+        console.log('Response:', response);
         return response;
+        
     } catch (error) {
-        console.error('❌ ERROR EmailJS:');
-        console.error('Mensaje:', error.message);
-        console.error('Status:', error.status);
-        console.error('Text:', error.text);
-        
-        // Fallback: mostrar código en consola
-        console.log(`\n⚠️  CORREO NO ENVIADO - CÓDIGO ALTERNATIVO:`);
-        console.log(`📧 ${correoUsuario}`);
-        console.log(`🔢 ${codigo}`);
-        console.log(`⏰ Válido por 15 minutos\n`);
-        
-        throw new Error(`No se pudo enviar el correo. Código: ${codigo}`);
+        console.error('❌ ERROR EmailJS Node.js:', error);
+        throw error;
     }
 };
 
