@@ -45,7 +45,7 @@ const obtenerUsuario = async (req = request, res = response) => {
   const { id } = req.params;
   try {
     const usuario = await Usuario.findById(id)
-      .populate("materias", "nombreMateria -_id")
+      .populate("materias")
       .populate("tareas", "nombreTarea estatusTarea -_id")
       .populate("notas", "nombreNota contenidoNota -_id")
       .populate("flashcards", "delanteFlashcard -_id")

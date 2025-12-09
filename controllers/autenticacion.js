@@ -47,4 +47,5 @@ const cerrarSesion = (req = request, res = response) => {
 module.exports = {
   loginUsuario,
   verificarJWT,
+  cerrarSesion,
 };

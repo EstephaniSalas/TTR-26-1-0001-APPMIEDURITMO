@@ -21,10 +21,20 @@ router.post("/login", [
   validarPasswordLogin, // Valida que la contraseña coincida
 ], loginUsuario);
 
+
+
 // Simple endpoint para probar/verificar un token
 router.get("/verificarJWT",[
   validarJWT,
 ], verificarJWT);
+
+
+
+// POST - Logout (opcional, cierre lógico en cliente)
+router.post("/logout", [
+  validarJWT,
+], cerrarSesion);
+
 
 
 module.exports = router;
