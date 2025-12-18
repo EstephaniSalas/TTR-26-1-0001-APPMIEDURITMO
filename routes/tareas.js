@@ -9,6 +9,7 @@ const {
   borrarTarea,
   cambiarStatusTarea,
   borrarTareas,
+  obtenerTareasFuturas,
 } = require("../controllers/tareas");
 
 const {
@@ -189,5 +190,18 @@ router.delete("/idUsuario/:idU/todas", [
   validarCampos,
   validarEliminarTarea,
 ], borrarTareas);
+
+
+//___________________________
+//Apartado de tareas. 
+// ::: Get - Obtener TAREAS FUTURAS para sincronización de notificaciones :::
+router.get("/idUsuario/:idU/futuras", [
+  validarJWT,
+  check("idU")
+    .notEmpty().withMessage("El id del usuario es obligatorio")
+    .isMongoId().withMessage("No es un ID válido de MongoDB")
+    .custom(existeUsuarioPorId),
+  validarCampos,
+], obtenerTareasFuturas);
 
 module.exports = router;

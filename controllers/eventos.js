@@ -1,4 +1,4 @@
-// controllers/eventos.js
+// controllers/eventos.js - ACTUALIZADO
 const { response, request } = require("express");
 const Evento = require("../models/evento");
 const Usuario = require("../models/usuario");
@@ -32,9 +32,15 @@ const crearEvento = async (req = request, res = response) => {
       $push: { eventos: eventoGuardado._id },
     });
 
+    // Calcular fechaHoraCompleta para notificaciones
+    const fechaHoraCompleta = new Date(`${fechaEvento.toISOString().split('T')[0]}T${horaInicio}:00`);
+
     res.status(201).json({
       msg: "Evento creado correctamente",
-      evento: eventoGuardado,
+      evento: {
+        ...eventoGuardado.toJSON(),
+        fechaHoraCompleta: fechaHoraCompleta.toISOString(), // Para Flutter
+      },
     });
   } catch (error) {
     console.error("Error en crearEvento:", error);
@@ -49,11 +55,17 @@ const crearEvento = async (req = request, res = response) => {
 
 // ::: GET - Obtener un evento específico :::
 const obtenerEvento = (req = request, res = response) => {
-  const { evento } = req; // viene del middleware validarEventoUsuario
+  const { evento } = req;
+
+  // 🔔 NUEVO: Agregar fechaHoraCompleta
+  const fechaHoraCompleta = new Date(`${evento.fechaEvento.toISOString().split('T')[0]}T${evento.horaInicio}:00`);
 
   res.json({
     msg: "Evento obtenido correctamente",
-    evento,
+    evento: {
+      ...evento.toJSON(),
+      fechaHoraCompleta: fechaHoraCompleta.toISOString(),
+    },
   });
 };
 
@@ -67,10 +79,19 @@ const obtenerEventos = async (req = request, res = response) => {
     const eventos = await Evento.find({ usuario: idU })
       .sort({ fechaEvento: 1, horaInicio: 1 });
 
+    // 🔔 NUEVO: Agregar fechaHoraCompleta a cada evento
+    const eventosConFechaCompleta = eventos.map(evento => {
+      const fechaHoraCompleta = new Date(`${evento.fechaEvento.toISOString().split('T')[0]}T${evento.horaInicio}:00`);
+      return {
+        ...evento.toJSON(),
+        fechaHoraCompleta: fechaHoraCompleta.toISOString(),
+      };
+    });
+
     res.json({
       msg: "Eventos obtenidos correctamente",
       total: eventos.length,
-      eventos,
+      eventos: eventosConFechaCompleta,
     });
   } catch (error) {
     console.error("Error en obtenerEventos:", error);
@@ -83,10 +104,55 @@ const obtenerEventos = async (req = request, res = response) => {
 
 
 
+// 🔔 NUEVO: GET - Obtener eventos FUTUROS (para sincronización de notificaciones)
+const obtenerEventosFuturos = async (req = request, res = response) => {
+  try {
+    const { idU } = req.params;
+    const ahora = new Date();
+
+    const eventos = await Evento.find({ 
+      usuario: idU,
+      fechaEvento: { $gte: ahora } // Solo eventos futuros
+    }).sort({ fechaEvento: 1, horaInicio: 1 });
+
+    // Filtrar eventos cuya hora también sea futura (mismo día)
+    const eventosFuturos = eventos.filter(evento => {
+      const fechaHoraCompleta = new Date(`${evento.fechaEvento.toISOString().split('T')[0]}T${evento.horaInicio}:00`);
+      return fechaHoraCompleta > ahora;
+    });
+
+    const eventosConFechaCompleta = eventosFuturos.map(evento => {
+      const fechaHoraCompleta = new Date(`${evento.fechaEvento.toISOString().split('T')[0]}T${evento.horaInicio}:00`);
+      return {
+        uid: evento._id.toString(),
+        tituloEvento: evento.tituloEvento,
+        descripcionEvento: evento.descripcionEvento,
+        fechaHoraCompleta: fechaHoraCompleta.toISOString(),
+        importante: evento.importante,
+        tipo: 'evento', // Para identificar el tipo en Flutter
+      };
+    });
+
+    res.json({
+      msg: "Eventos futuros obtenidos correctamente",
+      total: eventosConFechaCompleta.length,
+      eventos: eventosConFechaCompleta,
+    });
+  } catch (error) {
+    console.error("Error en obtenerEventosFuturos:", error);
+    res.status(500).json({
+      msg: "Error interno del servidor al obtener eventos futuros",
+      error: error.message,
+    });
+  }
+};
+
+
+
 // ::: PUT - Modificar un evento :::
 const modificarEvento = async (req = request, res = response) => {
   try {
-    const { evento } = req; // del middleware validarEventoUsuario
+    const { evento } = req;
 
     const {
       tituloEvento,
@@ -111,9 +177,17 @@ const modificarEvento = async (req = request, res = response) => {
       { new: true }
     );
 
+    // 🔔 NUEVO: Calcular nueva fechaHoraCompleta
+    const fechaFinal = cambios.fechaEvento || evento.fechaEvento;
+    const horaFinal = cambios.horaInicio || evento.horaInicio;
+    const fechaHoraCompleta = new Date(`${fechaFinal.toISOString().split('T')[0]}T${horaFinal}:00`);
+
     res.json({
       msg: "Evento actualizado correctamente",
-      evento: eventoActualizado,
+      evento: {
+        ...eventoActualizado.toJSON(),
+        fechaHoraCompleta: fechaHoraCompleta.toISOString(),
+      },
     });
   } catch (error) {
     console.error("Error en modificarEvento:", error);
@@ -130,7 +204,7 @@ const modificarEvento = async (req = request, res = response) => {
 const borrarEvento = async (req = request, res = response) => {
   try {
     const { idU } = req.params;
-    const { evento } = req; // del middleware validarEventoUsuario
+    const { evento } = req;
 
     await Evento.findByIdAndDelete(evento._id);
 
@@ -187,6 +261,7 @@ module.exports = {
   crearEvento,
   obtenerEvento,
   obtenerEventos,
+  obtenerEventosFuturos, // Endpoint para notificaciones
   modificarEvento,
   borrarEvento,
   borrarEventos,

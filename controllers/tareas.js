@@ -228,6 +228,53 @@ const borrarTareas = async (req = request, res = response) => {
   }
 };
 
+// 🔔 NUEVO: GET - Obtener tareas FUTURAS (para sincronización de notificaciones)
+const obtenerTareasFuturas = async (req = request, res = response) => {
+  try {
+    const { idU } = req.params;
+    const ahora = new Date();
+
+    const tareas = await Tarea.find({ 
+      usuario: idU,
+      fechaEntregaTarea: { $gte: ahora },
+      estatusTarea: { $ne: "Completada" } // No incluir completadas
+    })
+    .populate("materiaTarea", "nombreMateria -_id")
+    .sort({ fechaEntregaTarea: 1, horaEntregaTarea: 1 });
+
+    // Filtrar tareas cuya hora también sea futura
+    const tareasFuturas = tareas.filter(tarea => {
+      const fechaHoraCompleta = new Date(`${tarea.fechaEntregaTarea.toISOString().split('T')[0]}T${tarea.horaEntregaTarea}:00`);
+      return fechaHoraCompleta > ahora;
+    });
+
+    const tareasConFechaCompleta = tareasFuturas.map(tarea => {
+      const fechaHoraCompleta = new Date(`${tarea.fechaEntregaTarea.toISOString().split('T')[0]}T${tarea.horaEntregaTarea}:00`);
+      return {
+        uid: tarea._id.toString(),
+        nombreTarea: tarea.nombreTarea,
+        descripcionTarea: tarea.descripcionTarea,
+        tipoTarea: tarea.tipoTarea,
+        fechaHoraCompleta: fechaHoraCompleta.toISOString(),
+        materiaTarea: tarea.materiaTarea,
+        tipo: tarea.tipoTarea.toLowerCase(), // 'tarea', 'proyecto', 'examen'
+      };
+    });
+
+    res.json({
+      msg: "Tareas futuras obtenidas correctamente",
+      total: tareasConFechaCompleta.length,
+      tareas: tareasConFechaCompleta,
+    });
+  } catch (error) {
+    console.error("Error en obtenerTareasFuturas:", error);
+    res.status(500).json({
+      msg: "Error interno del servidor al obtener tareas futuras",
+      error: error.message,
+    });
+  }
+};
+
 
 module.exports = {
   crearTarea,
@@ -237,4 +284,5 @@ module.exports = {
   cambiarStatusTarea,
   borrarTarea,
   borrarTareas,
+  obtenerTareasFuturas,
 };

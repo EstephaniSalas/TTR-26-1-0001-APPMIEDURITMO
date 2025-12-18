@@ -1,8 +1,8 @@
 const { Router } = require("express");
 const { check } = require("express-validator");
 
-const { crearEvento, obtenerEvento, obtenerEventos, modificarEvento, borrarEvento, borrarEventos } = require("../controllers/eventos");
-const { existeUsuarioPorId, existeEventoPorId } = require("../helpers/db-validators");
+const { crearEvento, obtenerEvento, obtenerEventos, modificarEvento, borrarEvento, borrarEventos, obtenerEventosFuturos } = require("../controllers/eventos");
+const { existeUsuarioPorId, existeEventoPorId, } = require("../helpers/db-validators");
 const { validarCampos } = require("../middlewares/validar-campos");
 const { validarHora24, 
         validarHora24Opcional,
@@ -121,5 +121,18 @@ router.delete("/idUsuario/:idU", [
     .custom(existeUsuarioPorId),
   validarCampos,
 ],borrarEventos);
+
+
+//______________________
+//Apartado para notificaciones. 
+// ::: Get - Obtener EVENTOS FUTUROS para sincronización de notificaciones :::
+router.get("/idUsuario/:idU/futuros", [
+  validarJWT,
+  check("idU")
+    .notEmpty().withMessage("El id del usuario es obligatorio")
+    .isMongoId().withMessage("No es un ID usuario válido de MongoDB")
+    .custom(existeUsuarioPorId),
+  validarCampos,
+], obtenerEventosFuturos);
 
 module.exports = router;
